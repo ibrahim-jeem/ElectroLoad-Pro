@@ -4,7 +4,8 @@
   "private": true,
   "description": "Electrical load calculator and single line diagram generator (static site)",
   "scripts": {
-    "build:css": "tailwindcss -c tailwind.config.js -i src/input.css -o css/tailwind.css --minify"
+    "build:css": "tailwindcss -c tailwind.config.js -i src/input.css -o css/tailwind.css --minify",
+    "test": "node --test"
   },
   "devDependencies": {
     "tailwindcss": "3.4.17"
