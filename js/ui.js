@@ -44,7 +44,7 @@ function updateConfig() {
     config.safetyFactor = parseFloat(document.getElementById('safetyFactorSelect').value);
 
     document.getElementById('configSummaryText').innerText = 
-        `${config.phase.includes('3P') ? '3-Phase ' + config.voltageLL + 'V' : '1-Phase ' + config.voltageLN + 'V'} ${config.frequency}Hz | ${config.standard}`;
+        `${config.phase.includes('3P') ? '3-Phase ' + config.voltageLL + 'V' : '1-Phase ' + config.voltageLN + 'V'} ${config.frequency}Hz | Reference: ${config.standard} (not applied)`;
 
     recalculateAll();
 }
@@ -52,7 +52,7 @@ function updateConfig() {
 // Render Table Rows for Fixtures
 function renderFixtureTable() {
     const tbody = document.getElementById('fixtureTableBody');
-    document.getElementById('roomList').innerHTML = [...new Set(fixtures.map(f => f.room || 'General'))].map(r => `<option value="${r}">`).join('');
+    document.getElementById('roomList').innerHTML = [...new Set(fixtures.map(f => f.room || 'General'))].map(r => `<option value="${escapeHTML(r)}">`).join('');
     document.getElementById('cktList').innerHTML = [...new Set(fixtures.map(f => f.ckt).filter(Boolean))].map(c => `<option value="${c}">`).join('');
     tbody.innerHTML = '';
 
@@ -61,14 +61,14 @@ function renderFixtureTable() {
         tr.className = "hover:bg-slate-800/40 transition";
         tr.innerHTML = `
             <td class="py-2 px-2">
-                <input type="text" value="${item.name}" onchange="updateFixture(${item.id}, 'name', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:border-sky-500 focus:outline-none">
+                <input type="text" value="${escapeHTML(item.name)}" onchange="updateFixture(${item.id}, 'name', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:border-sky-500 focus:outline-none">
             </td>
             <td class="py-2 px-2">
-                <input type="text" list="roomList" value="${(item.room || 'General').replace(/"/g, '&quot;')}" onchange="updateFixture(${item.id}, 'room', this.value.trim() || 'General')" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:border-sky-500 focus:outline-none">
+                <input type="text" list="roomList" value="${escapeHTML(item.room || 'General')}" onchange="updateFixture(${item.id}, 'room', this.value.trim() || 'General')" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:border-sky-500 focus:outline-none">
             </td>
             <td class="py-2 px-2">
                 <select onchange="updateFixture(${item.id}, 'board', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">
-                    ${boards.map(b => `<option value="${b.id}" ${item.board === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
+                    ${boards.map(b => `<option value="${b.id}" ${item.board === b.id ? 'selected' : ''}>${escapeHTML(b.name)}</option>`).join('')}
                 </select>
             </td>
             <td class="py-2 px-2">
@@ -175,7 +175,7 @@ function addPresetItem(name, category, watts, pf, sup = 1) {
 // Board management
 function addBoard() {
     const nid = 'b' + (Math.max(...boards.map(b => parseInt(b.id.slice(1)) || 0)) + 1);
-    boards.push({ id: nid, name: 'SDB-' + (boards.filter(b => b.type === 'SDB').length + 1), type: 'SDB', par: boards[0].id, sup: 3, dist: 20 });
+    boards.push({ id: nid, name: 'SDB-' + (boards.filter(b => b.type === 'SDB').length + 1), type: 'SDB', room: 'General', par: boards[0].id, sup: 3, dist: 20 });
     renderFixtureTable();
     recalculateAll();
 }
@@ -183,7 +183,9 @@ function addBoard() {
 function updateBoard(id, key, value) {
     const b = boards.find(x => x.id === id);
     if (!b) return;
+    const previous = b[key];
     b[key] = (key === 'dist' || key === 'sup') ? Number(value) : value;
+    if (key === 'par' || key === 'sup') { const issue = validateBoardHierarchy(); if (issue) { b[key] = previous; alert(issue); renderBoardTable(); return; } }
     if (key === 'sup' && Number(value) === 1) {
         boards.forEach(k => { if (k !== b && k.par === b.id) k.par = b.par || boards[0].id; });
     }
@@ -211,28 +213,24 @@ function renderBoardTable() {
     boards.forEach((b, idx) => {
         const s = b.s || { kw: 0, mx: 0, cb: 6 };
         const isRoot = idx === 0, bs = bSup(b);
-        const wire = wt.find(w => w.ampacity >= s.cb) || wt[wt.length - 1];
+        const wire = s.cb == null ? null : (wt.find(w => w.ampacity >= s.cb) || null);
         let vd = '&mdash;', vdWarn = false;
-        if (!isRoot) {
-            const L = b.dist / 1000;
-            const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100;
-            vdWarn = pct > 3.0;
-            vd = pct.toFixed(2) + '%';
-        }
+        if (!isRoot && wire) { const L = b.dist / 1000; const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100; vdWarn = pct > 3.0; vd = pct.toFixed(2) + '%'; }
+        if (!isRoot && !wire) vd = 'NOT SIZED';
         const cur = bs === 3 && s.A ? `R ${s.A.R.toFixed(1)} &middot; Y ${s.A.Y.toFixed(1)} &middot; B ${s.A.B.toFixed(1)}` : `${(s.mx || 0).toFixed(1)} A (${b.e || 'R'})`;
-        const parents = boards.filter(k => k !== b && bSup(k) === 3 && !isDescendant(k, b));
+        const parents = boards.filter(k => k !== b && bSup(k) >= bSup(b) && !isDescendant(k, b));
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
-            <td class="py-2 px-2"><input type="text" value="${b.name.replace(/"/g, '&quot;')}" onchange="updateBoard('${b.id}', 'name', this.value.trim() || this.defaultValue)" class="w-28 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 font-sans focus:border-sky-500 focus:outline-none"></td>
+            <td class="py-2 px-2"><input type="text" value="${escapeHTML(b.name)}" onchange="updateBoard('${b.id}', 'name', this.value.trim() || this.defaultValue)" class="w-28 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 font-sans focus:border-sky-500 focus:outline-none"><input type="text" aria-label="Board area" placeholder="Area" value="${escapeHTML(b.room || '')}" onchange="updateBoard('${b.id}', 'room', this.value.trim())" class="w-24 mt-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-400"></td>
             <td class="py-2 px-2">${isRoot ? '<span class="text-slate-300">MDB</span>' : `<select onchange="updateBoard('${b.id}', 'type', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${['MDB', 'SDB', 'SB', 'FDB', 'RDB'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
-            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-400">Grid Supply</span>' : `<select onchange="updateBoard('${b.id}', 'par', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${parents.map(k => `<option value="${k.id}" ${b.par === k.id ? 'selected' : ''}>${k.name}</option>`).join('')}</select>`}</td>
+            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-400">Grid Supply</span>' : `<select onchange="updateBoard('${b.id}', 'par', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${parents.map(k => `<option value="${k.id}" ${b.par === k.id ? 'selected' : ''}>${escapeHTML(k.name)}</option>`).join('')}</select>`}</td>
             <td class="py-2 px-2"><select ${is3PSystem() ? '' : 'disabled'} onchange="updateBoard('${b.id}', 'sup', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none"><option value="3" ${Number(b.sup) === 3 ? 'selected' : ''}>3&Phi;</option><option value="1" ${Number(b.sup) === 1 ? 'selected' : ''}>1&Phi;</option></select></td>
             <td class="py-2 px-2">${isRoot ? '&mdash;' : `<input type="number" min="1" value="${b.dist}" onchange="updateBoard('${b.id}', 'dist', parseFloat(this.value) || 1)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">`}</td>
             <td class="py-2 px-2 text-slate-300">${(s.kw || 0).toFixed(2)}</td>
             <td class="py-2 px-2 text-amber-400 font-bold">${cur}</td>
-            <td class="py-2 px-2 text-sky-400 font-bold">${s.cb}A ${bs === 3 ? '3P' : '1P'} ${isRoot ? 'MCCB' : 'MCB'}</td>
-            <td class="py-2 px-2 text-emerald-400 font-bold">${wire.size}</td>
+            <td class="py-2 px-2 text-sky-400 font-bold">${s.cb == null ? 'NOT SIZED' : s.cb + 'A'} ${bs === 3 ? '3P' : '1P'} ${isRoot ? 'MCCB' : 'MCB'}</td>
+            <td class="py-2 px-2 text-emerald-400 font-bold">${wire ? wire.size : 'NOT SIZED'}</td>
             <td class="py-2 px-2 ${vdWarn ? 'text-red-400 font-bold' : 'text-slate-300'}">${vd}</td>
             <td class="py-2 px-2 text-right no-print">${isRoot ? '' : `<button onclick="removeBoard('${b.id}')" class="text-slate-500 hover:text-red-400 p-1 transition"><i class="fa-solid fa-trash-can"></i></button>`}</td>
         `;
@@ -260,7 +258,7 @@ function renderPresetModal() {
 function renderPresetGrid() {
     document.getElementById('presetGrid').innerHTML = library.map((p, i) => `
         <button onclick="addPresetFromLib(${i})" class="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-left transition space-y-1">
-            <span class="text-xs font-bold text-slate-200 block">${p.name}</span>
+            <span class="text-xs font-bold text-slate-200 block">${escapeHTML(p.name)}</span>
             <span class="text-[11px] text-slate-400 block">${p.watts} Watts &bull; PF ${p.pf} &bull; ${p.sup === 3 ? '3&Phi;' : '1&Phi;'}</span>
         </button>`).join('');
 }

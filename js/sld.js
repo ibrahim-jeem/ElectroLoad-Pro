@@ -1,170 +1,43 @@
 /* ElectroLoad Pro | sld.js
- * Single line diagram (SVG) generator.
- * Classic script: shares one global scope with the other files, so keep the load order from index.html.
+ * Deterministic tree-based conceptual SLD. Downstream feeders follow each board's explicit par reference.
+ * Preliminary visualization only; not a construction drawing or protection-coordination study.
  */
-
-// Interactive SVG Single-Line Diagram Generator
-function renderSLD(mainMccbRating, totalCurrent) {
-    const svg = document.getElementById('sldSvg');
-    svg.innerHTML = ''; // Clear existing drawing
-
-    const NS = "http://www.w3.org/2000/svg";
-    const g = document.createElementNS(NS, "g");
-    svg.appendChild(g);
-
-    const PC = { R: '#ef4444', Y: '#eab308', B: '#3b82f6' };
-    const OFF = { R: 0, Y: 8, B: 16 };
-
-    // Helper to build SVG Elements
-    function drawLine(x1, y1, x2, y2, stroke="#38bdf8", strokeWidth=2, dash=false) {
-        const line = document.createElementNS(NS, "line");
-        line.setAttribute("x1", x1); line.setAttribute("y1", y1);
-        line.setAttribute("x2", x2); line.setAttribute("y2", y2);
-        line.setAttribute("stroke", stroke);
-        line.setAttribute("stroke-width", strokeWidth);
-        if(dash) line.setAttribute("stroke-dasharray", "4,4");
-        g.appendChild(line);
-    }
-
-    function drawRect(x, y, w, h, fill="#0f172a", stroke="#38bdf8", rx=4) {
-        const rect = document.createElementNS(NS, "rect");
-        rect.setAttribute("x", x); rect.setAttribute("y", y);
-        rect.setAttribute("width", w); rect.setAttribute("height", h);
-        rect.setAttribute("fill", fill); rect.setAttribute("stroke", stroke);
-        rect.setAttribute("stroke-width", "1.5");
-        rect.setAttribute("rx", rx);
-        g.appendChild(rect);
-    }
-
-    function drawText(text, x, y, fill="#f8fafc", fontSize="11", anchor="middle", fontMono=true) {
-        const txt = document.createElementNS(NS, "text");
-        txt.setAttribute("x", x); txt.setAttribute("y", y);
-        txt.setAttribute("fill", fill);
-        txt.setAttribute("font-size", fontSize);
-        txt.setAttribute("text-anchor", anchor);
-        if (fontMono) txt.setAttribute("font-family", "JetBrains Mono, monospace");
-        txt.textContent = text;
-        g.appendChild(txt);
-    }
-
-    // One branch circuit: tap from bus -> branch MCB with phase tag -> red quantity node -> load details
-    function drawCircuit(ckt, bx, busY, b3) {
-        const tp = ckt.sup === 3;
-        const color = tp ? '#94a3b8' : PC[ckt.phase];
-        if (tp) ['R', 'Y', 'B'].forEach((p, i) => drawLine(bx - 6 + 6 * i, busY + OFF[p], bx - 6 + 6 * i, busY + 50, PC[p], 2));
-        else drawLine(bx, busY + (b3 ? OFF[ckt.phase] : 0), bx, busY + 50, color, 2);
-
-        drawRect(bx - 35, busY + 50, 70, 35, "#0f172a", color, 4);
-        drawText(`${ckt.mcb}A ${tp ? '3P ' : ''}MCB`, bx, busY + 65, "#f8fafc", "9");
-        drawText(tp ? '3-Phase' : `Phase ${ckt.phase}`, bx, busY + 77, color, "8");
-
-        drawLine(bx, busY + 85, bx, busY + 120, color, 1.5);
-
-        const circle = document.createElementNS(NS, "circle");
-        circle.setAttribute("cx", bx); circle.setAttribute("cy", busY + 130);
-        circle.setAttribute("r", "12");
-        circle.setAttribute("fill", "#1e293b");
-        circle.setAttribute("stroke", "#ef4444");
-        circle.setAttribute("stroke-width", "2");
-        g.appendChild(circle);
-
-        const first = ckt.items[0];
-        const loadLabel = ckt.items.length > 1 ? first.name.substring(0, 9) + ' +' + (ckt.items.length - 1) : first.name.substring(0, 13);
-        const roomLabel = ckt.rooms[0].substring(0, 12) + (ckt.rooms.length > 1 ? ' +' + (ckt.rooms.length - 1) : '');
-        drawText(`${ckt.qty}`, bx, busY + 134, "#ffffff", "9");
-        drawText(ckt.id, bx, busY + 155, "#e2e8f0", "9");
-        drawText(loadLabel, bx, busY + 167, "#94a3b8", "9");
-        drawText(roomLabel, bx, busY + 179, "#64748b", "8");
-        drawText(`${Math.round(ckt.watts)}W`, bx, busY + 191, "#38bdf8", "8");
-    }
-
-    // A board: its circuits, its sub-boards (feeder MCB + board node + sub-bus), and its R-Y-B-N bus
-    function drawBoard(b, x0, busY, isRoot) {
-        const b3 = bSup(b) === 3;
-        const own = circuits.filter(c => c.board === b.id);
-        const kids = boards.filter(k => k !== b && k.par === b.id);
-        const xs = [];
-        let cx = x0, bottom = busY + 200;
-
-        own.forEach(c => { const bx = cx + 45; drawCircuit(c, bx, busY, b3); xs.push(bx); cx += 90; });
-
-        kids.forEach(k => {
-            const r = drawBoard(k, cx, busY + 160, false);
-            const kx = r.cx, kt = bSup(k) === 3;
-            const col = kt ? '#94a3b8' : PC[k.e || 'R'];
-            if (kt) ['R', 'Y', 'B'].forEach((p, i) => drawLine(kx - 6 + 6 * i, busY + (b3 ? OFF[p] : 0), kx - 6 + 6 * i, busY + 30, PC[p], 2));
-            else drawLine(kx, busY + (b3 ? OFF[k.e || 'R'] : 0), kx, busY + 30, col, 2);
-            drawRect(kx - 35, busY + 30, 70, 30, "#0f172a", col, 4);
-            drawText(`${k.s.cb}A ${kt ? '3P ' : ''}MCB`, kx, busY + 43, "#f8fafc", "9");
-            drawText(kt ? '3-Phase' : `Phase ${k.e || 'R'}`, kx, busY + 54, col, "8");
-            drawLine(kx, busY + 60, kx, busY + 112, col, 1.5);
-            xs.push(kx); cx += r.w; bottom = Math.max(bottom, r.bottom);
-        });
-
-        if (!xs.length) { xs.push(x0 + 50); cx = x0 + 100; drawText('(no loads)', x0 + 50, busY + 50, "#64748b", "9"); }
-        const w = Math.max(cx - x0, 100);
-        const mid = (xs[0] + xs[xs.length - 1]) / 2;
-        const bx1 = xs[0] - 35, bx2 = xs[xs.length - 1] + 35;
-
-        if (!isRoot) {
-            // board node sitting between the feeder MCB and the sub-bus
-            drawRect(mid - 60, busY - 48, 120, 28, "#0f172a", "#38bdf8", 6);
-            drawText(`${b.name} \u00B7 ${b.type}`, mid, busY - 36, "#f8fafc", "9");
-            drawText(`${b3 ? '3' : '1'}-Phase \u00B7 ${b.s.mx.toFixed(1)}A`, mid, busY - 25, "#94a3b8", "8");
-            drawLine(mid, busY - 20, mid, busY, "#38bdf8", 2);
-        } else {
-            drawText(`${b.name} \u00B7 ${b.type}`, bx1, busY - 8, "#38bdf8", "9", "start");
-        }
-
-        if (b3) {
-            drawLine(bx1, busY, bx2, busY, "#ef4444", 4);          // Phase R
-            drawLine(bx1, busY + 8, bx2, busY + 8, "#eab308", 4);  // Phase Y
-            drawLine(bx1, busY + 16, bx2, busY + 16, "#3b82f6", 4); // Phase B
-            drawLine(bx1, busY + 24, bx2, busY + 24, "#64748b", 2, true); // Neutral
-            if (isRoot) {
-                drawText("R-BUS", bx1 - 8, busY + 4, "#ef4444", "9", "end");
-                drawText("Y-BUS", bx1 - 8, busY + 12, "#eab308", "9", "end");
-                drawText("B-BUS", bx1 - 8, busY + 20, "#3b82f6", "9", "end");
-            }
-        } else {
-            const pc = PC[b.e || 'R'];
-            drawLine(bx1, busY, bx2, busY, pc, 4);
-            drawLine(bx1, busY + 8, bx2, busY + 8, "#64748b", 2, true);
-            if (isRoot) drawText(`${b.e || 'R'}-BUS`, bx1 - 8, busY + 4, pc, "9", "end");
-        }
-        return { w, cx: mid, bottom };
-    }
-
-    const busY = 210;
-    const root = boards[0];
-    const r = drawBoard(root, 0, busY, true);
-    const sx = r.cx;
-    const rootThree = bSup(root) === 3;
-
-    // 1. Grid / Transformer Supply Top Node
-    drawLine(sx, 20, sx, 60, "#38bdf8", 3);
-    drawRect(sx - 90, 15, 180, 30, "#0284c7", "#38bdf8", 8);
-    drawText(`${rootThree ? '3-PHASE' : '1-PHASE'} GRID SUPPLY (${rootThree ? config.voltageLL : config.voltageLN}V)`, sx, 34, "#ffffff", "10", "middle");
-
-    // 2. Main Incomer MCCB Circuit Breaker
-    drawLine(sx, 45, sx, 90, "#38bdf8", 2);
-    drawRect(sx - 65, 80, 130, 35, "#0f172a", "#ef4444", 6);
-    drawText(`MAIN MCCB: ${mainMccbRating}A`, sx, 97, "#f8fafc", "10");
-    drawText(`Load: ${totalCurrent.toFixed(1)}A`, sx, 109, "#94a3b8", "9");
-
-    // 3. ELCB / RCCB Earth Leakage Protection
-    drawLine(sx, 115, sx, 145, "#38bdf8", 2);
-    drawRect(sx - 60, 145, 120, 25, "#0f172a", "#10b981", 6);
-    drawText(rootThree ? `RCCB 30mA 4P` : `RCCB 30mA 2P`, sx, 161, "#10b981", "10");
-
-    // 4. Link down to the root bus
-    drawLine(sx, 170, sx, busY, "#38bdf8", 2);
-
-    // Size the canvas to the diagram and centre it
-    const avail = (svg.parentElement.clientWidth || 900) - 32;
-    const W = Math.max(avail, r.w + 260, 800);
-    const dx = (W - r.w) / 2;
-    g.setAttribute('transform', `translate(${dx},0)`);
-    svg.style.width = W + 'px';
-    svg.style.height = Math.max(480, r.bottom + 40) + 'px';
+function renderSLD(mainMccbRating,totalCurrent) {
+ const svg=document.getElementById('sldSvg'); svg.replaceChildren();
+ const NS='http://www.w3.org/2000/svg', g=document.createElementNS(NS,'g'); svg.appendChild(g);
+ const phaseColor={R:'#ef4444',Y:'#eab308',B:'#3b82f6',N:'#64748b'};
+ const line=(x1,y1,x2,y2,color='#38bdf8',width=2,dash=false)=>{const e=document.createElementNS(NS,'line');Object.entries({x1,y1,x2,y2,stroke:color,'stroke-width':width}).forEach(([k,v])=>e.setAttribute(k,v));if(dash)e.setAttribute('stroke-dasharray','5 4');g.appendChild(e);};
+ const label=(v,x,y,color='#e2e8f0',size=9,anchor='middle')=>{const e=document.createElementNS(NS,'text');Object.entries({x,y,fill:color,'font-size':size,'text-anchor':anchor}).forEach(([k,v])=>e.setAttribute(k,v));e.textContent=String(v??'');g.appendChild(e);};
+ const box=(x,y,w,h,v,color='#38bdf8',size=9)=>{const e=document.createElementNS(NS,'rect');Object.entries({x,y,width:w,height:h,rx:5,fill:'#0f172a',stroke:color,'stroke-width':1.5}).forEach(([k,v])=>e.setAttribute(k,v));g.appendChild(e);label(v,x+w/2,y+h/2+3,'#e2e8f0',size);};
+ const root=boards[0]; if(!root)return;
+ const children=b=>boards.filter(k=>k.par===b.id&&k!==b), positions=new Map(); let leaf=0;
+ const maxLocalCircuits=Math.max(0,...boards.map(b=>circuits.filter(c=>c.board===b.id).length));
+ const margin=180+maxLocalCircuits*90, leafStep=Math.max(260,maxLocalCircuits*90+150);
+ function place(b,depth){const kids=children(b);let x;if(!kids.length){x=margin+leaf*leafStep;leaf++;}else{const xs=kids.map(k=>place(k,depth+1));x=(Math.min(...xs)+Math.max(...xs))/2;}positions.set(b.id,{x,depth});return x;}
+ place(root,0);
+ const maxDepth=Math.max(...Array.from(positions.values(),p=>p.depth)),width=Math.max(900,margin*2+Math.max(0,leaf-1)*leafStep),height=210+(maxDepth+1)*250;
+ svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.style.width=width+'px';svg.style.height=height+'px';
+ const top=b=>130+positions.get(b.id).depth*250,bus=b=>top(b)+75;
+ const rx=positions.get(root.id).x;
+ box(rx-100,15,200,30,`${is3PSystem()?'3-PHASE':'1-PHASE'} SUPPLY · ${is3PSystem()?config.voltageLL:config.voltageLN} V`,'#0284c7',10);
+ line(rx,45,rx,58);box(rx-70,58,140,34,`MAIN MCCB · ${mainMccbRating==null?'NOT SIZED':mainMccbRating+' A'}`,'#ef4444',9);
+ label(`Incomer estimate: ${Number(totalCurrent||0).toFixed(1)} A`,rx,111,'#94a3b8',9);
+ line(rx,92,rx,130,'#38bdf8',2);
+ // Draw each board bus and its own final circuits.
+ for(const b of boards){
+  const x=positions.get(b.id).x,y=top(b),by=bus(b),three=bSup(b)===3,own=circuits.filter(c=>c.board===b.id),kids=children(b);
+  box(x-92,y,184,42,`${b.name} · ${b.type} · ${b.room||'General'}`,'#38bdf8',9);
+  label(`${three?'3P':'1P'} · ${Number(b.s?.mx||0).toFixed(1)} A · Main protection ${b.s?.cb==null?'NOT SIZED':b.s.cb+' A'}`,x,y+57,'#94a3b8',8);
+ line(x,y+42,x,by,'#38bdf8',1.7);
+  const childXs=kids.map(k=>positions.get(k.id).x);
+  const circuitStart=kids.length?Math.min(...childXs)-own.length*78-55:x-((own.length-1)/2)*78;
+  const circuitXs=own.map((c,i)=>circuitStart+i*78),taps=[...circuitXs,...childXs];
+  const left=taps.length?Math.min(x,...taps)-24:x-85,right=taps.length?Math.max(x,...taps)+24:x+85;
+  if(three){line(left,by,right,by,phaseColor.R,3);line(left,by+6,right,by+6,phaseColor.Y,3);line(left,by+12,right,by+12,phaseColor.B,3);line(left,by+18,right,by+18,phaseColor.N,1.5,true);}
+  else{line(left,by,right,by,phaseColor[b.e]||phaseColor.R,3);line(left,by+8,right,by+8,phaseColor.N,1.5,true);}
+  own.forEach((c,i)=>{const cx=circuitXs[i],col=c.sup===3?'#94a3b8':(phaseColor[c.phase]||phaseColor.R);line(cx,by+20,cx,by+38,col,1.5);box(cx-34,by+38,68,28,`${c.mcb==null?'N/S':c.mcb+'A'} ${c.sup===3?'3P':'MCB'}`,'#64748b',8);label(c.id,cx,by+82,'#cbd5e1',8);label(Math.round(c.watts)+' W',cx,by+94,'#38bdf8',8);});
+  // Child feeder is a continuous parent-bus -> feeder breaker -> child board path.
+  kids.forEach(k=>{const kx=positions.get(k.id).x,ky=top(k);line(kx,by+20,kx,by+62,'#94a3b8',1.7);box(kx-39,by+62,78,27,`${k.s?.cb==null?'N/S':k.s.cb+'A'} FEED`,'#f59e0b',8);line(kx,by+89,kx,ky,'#94a3b8',1.7);});
+ }
+ label(ENGINEERING_LIMITATION_NOTICE,12,height-14,'#fbbf24',8,'start');
 }

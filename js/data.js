@@ -24,9 +24,9 @@ let fixtures = [
 
 // Distribution Boards (index 0 is always the root MDB fed from the grid)
 let boards = [
-    { id: 'b0', name: 'MDB', type: 'MDB', par: '', sup: 3, dist: 0 },
-    { id: 'b1', name: 'SDB-1', type: 'SDB', par: 'b0', sup: 3, dist: 20 },
-    { id: 'b2', name: 'SB-1', type: 'SB', par: 'b1', sup: 1, dist: 12 }
+    { id: 'b0', name: 'MDB', type: 'MDB', room: 'Main', par: '', sup: 3, dist: 0 },
+    { id: 'b1', name: 'SDB-1', type: 'SDB', room: 'Master Bed', par: 'b0', sup: 3, dist: 20 },
+    { id: 'b2', name: 'SB-1', type: 'SB', room: 'Master Bed', par: 'b1', sup: 1, dist: 12 }
 ];
 const SAMPLE_BOARDS = { 1: 'b2', 2: 'b1', 3: 'b1', 4: 'b0', 5: 'b0' };
 fixtures.forEach(f => { f.board = SAMPLE_BOARDS[f.id] || 'b0'; f.sup = f.sup || 1; });
@@ -50,18 +50,18 @@ function saveLibrary() { try { localStorage.setItem('elpro_library', JSON.string
 
 // Wire Ampacity Lookup Table (Metric - Copper BYA/NYY)
 const METRIC_WIRE_TABLE = [
-    { size: '1.5 rm', ampacity: 15.5, resistance: 12.1, pe: '1.5 rm' },
-    { size: '2.5 rm', ampacity: 21, resistance: 7.41, pe: '2.5 rm' },
-    { size: '4.0 rm', ampacity: 28, resistance: 4.61, pe: '4.0 rm' },
-    { size: '6.0 rm', ampacity: 36, resistance: 3.08, pe: '6.0 rm' },
-    { size: '10.0 rm', ampacity: 50, resistance: 1.83, pe: '10.0 rm' },
-    { size: '16.0 rm', ampacity: 68, resistance: 1.15, pe: '16.0 rm' },
-    { size: '25.0 rm', ampacity: 89, resistance: 0.727, pe: '16.0 rm' },
-    { size: '35.0 rm', ampacity: 110, resistance: 0.524, pe: '16.0 rm' },
-    { size: '50.0 rm', ampacity: 134, resistance: 0.387, pe: '25.0 rm' },
-    { size: '70.0 rm', ampacity: 171, resistance: 0.268, pe: '35.0 rm' },
-    { size: '95.0 rm', ampacity: 207, resistance: 0.193, pe: '50.0 rm' },
-    { size: '120.0 rm', ampacity: 239, resistance: 0.153, pe: '70.0 rm' }
+    { size: '1.5 mm²', ampacity: 15.5, resistance: 12.1, pe: '1.5 mm²' },
+    { size: '2.5 mm²', ampacity: 21, resistance: 7.41, pe: '2.5 mm²' },
+    { size: '4.0 mm²', ampacity: 28, resistance: 4.61, pe: '4.0 mm²' },
+    { size: '6.0 mm²', ampacity: 36, resistance: 3.08, pe: '6.0 mm²' },
+    { size: '10.0 mm²', ampacity: 50, resistance: 1.83, pe: '10.0 mm²' },
+    { size: '16.0 mm²', ampacity: 68, resistance: 1.15, pe: '16.0 mm²' },
+    { size: '25.0 mm²', ampacity: 89, resistance: 0.727, pe: '16.0 mm²' },
+    { size: '35.0 mm²', ampacity: 110, resistance: 0.524, pe: '16.0 mm²' },
+    { size: '50.0 mm²', ampacity: 134, resistance: 0.387, pe: '25.0 mm²' },
+    { size: '70.0 mm²', ampacity: 171, resistance: 0.268, pe: '35.0 mm²' },
+    { size: '95.0 mm²', ampacity: 207, resistance: 0.193, pe: '50.0 mm²' },
+    { size: '120.0 mm²', ampacity: 239, resistance: 0.153, pe: '70.0 mm²' }
 ];
 
 // Wire Ampacity Lookup Table (AWG - Copper THHN/THWN)
@@ -79,6 +79,7 @@ const AWG_WIRE_TABLE = [
 ];
 
 const STANDARD_BREAKER_RATINGS = [6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400];
+const ENGINEERING_LIMITATION_NOTICE = 'Preliminary estimate only. Verify cable derating, fault level, breaking capacity, disconnection time, earthing and applicable code before construction.';
 
 // Circuit Grouping State & Rules
 let grouping = { auto: true, rooms: true, strategy: 'combine' };

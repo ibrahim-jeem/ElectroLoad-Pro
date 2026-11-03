@@ -14,6 +14,12 @@ function recalculateAll() {
     calcBody.innerHTML = '';
 
     const wireTable = config.wireUnit === 'Metric' ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
+    const validationError = validateProjectInputs();
+    if (validationError) {
+        calcBody.innerHTML = '<tr><td colspan="10" class="p-4 text-red-400">Calculation blocked: ' + escapeHTML(validationError) + '</td></tr>';
+        ['totalKwVal','demandKwVal','totalKvaVal','designAmpsVal','mainMccbVal','imbalanceVal','neutralCurrentVal','phaseDeviationVal'].forEach(id => { const el=document.getElementById(id); if(el) el.innerText='—'; });
+        return;
+    }
 
     // Connected & demand totals (per fixture)
     fixtures.forEach((item) => {
@@ -45,7 +51,7 @@ function recalculateAll() {
 
         // Breaker sizing (safety factor x circuit current)
         const requiredBreakerRating = circuitCurrent * config.safetyFactor;
-        const mcbRating = STANDARD_BREAKER_RATINGS.find(r => r >= requiredBreakerRating) || 400;
+        const mcbRating = selectBreakerRating(requiredBreakerRating);
         ckt.mcb = mcbRating;
 
         // Trip Curve Suggestion
@@ -54,7 +60,15 @@ function recalculateAll() {
         if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
 
         // Wire Gauge Selection
-        const recommendedWire = wireTable.find(w => w.ampacity >= mcbRating) || wireTable[wireTable.length - 1];
+        const recommendedWire = mcbRating === null ? null : (wireTable.find(w => w.ampacity >= mcbRating) || null);
+        ckt.wire = recommendedWire;
+        if (mcbRating === null || !recommendedWire) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-red-400">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': NO VALID BREAKER/CABLE SIZE IN THE AVAILABLE TABLE. Recommendation blocked.</td>';
+            calcBody.appendChild(row);
+            ckt.vDropPct = null;
+            return;
+        }
 
         // Voltage Drop Check (longest run in the circuit): %Vd = (2 * L * I * R) / V_LN
         const resistancePerKm = recommendedWire.resistance;
@@ -68,7 +82,7 @@ function recalculateAll() {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-800/40 transition";
         tr.innerHTML = `
-            <td class="py-2.5 px-3 text-slate-200 font-sans font-semibold">${boardOf(ckt.board).name} &middot; ${ckt.id}${ckt.sup === 3 ? ' <span class="text-[10px] font-bold text-slate-300">3&Phi;</span>' : ''} <span class="text-[10px] font-normal text-slate-400">${ckt.rooms.join(', ')}</span><span class="block text-[10px] font-normal text-slate-500 truncate max-w-[240px]">${ckt.items.map(f => f.name).join(' + ')}</span></td>
+            <td class="py-2.5 px-3 text-slate-200 font-sans font-semibold">${escapeHTML(boardOf(ckt.board).name)} &middot; ${escapeHTML(ckt.id)}${ckt.sup === 3 ? ' <span class="text-[10px] font-bold text-slate-300">3&Phi;</span>' : ''} <span class="text-[10px] font-normal text-slate-400">${escapeHTML(ckt.rooms.join(', '))}</span><span class="block text-[10px] font-normal text-slate-500 truncate max-w-[240px]">${escapeHTML(ckt.items.map(f => f.name).join(' + '))}</span></td>
             <td class="py-2.5 px-3 text-slate-300">${itemWatts.toFixed(0)} W</td>
             <td class="py-2.5 px-3 text-amber-400 font-bold">${circuitCurrent.toFixed(1)} A</td>
             <td class="py-2.5 px-3 text-sky-400 font-bold">${mcbRating}A ${ckt.sup === 3 ? '3P ' : ''}MCB</td>
@@ -94,7 +108,7 @@ function recalculateAll() {
     // Total Main Line Current
     let totalMainAmps = 0;
     if (config.phase.includes('3P')) {
-        totalMainAmps = (totalConnectedWatts) / (Math.sqrt(3) * config.voltageLL * avgPf);
+        totalMainAmps = Math.max(phaseAmps.R, phaseAmps.Y, phaseAmps.B);
     } else {
         totalMainAmps = totalConnectedWatts / (config.voltageLN * avgPf);
     }
@@ -102,7 +116,7 @@ function recalculateAll() {
     // Main MCCB Rating
     const requiredMainMccb = totalMainAmps * config.safetyFactor;
     // Main MCCB covers both the balanced-load estimate and the highest single-phase current of the root board
-    const mainMccb = Math.max(STANDARD_BREAKER_RATINGS.find(r => r >= requiredMainMccb) || 400, boards[0].s.cb);
+    const mainMccb = selectBreakerRating(requiredMainMccb);
     boards[0].s.cb = mainMccb;
 
     // Phase Unbalance Calculation
@@ -121,7 +135,7 @@ function recalculateAll() {
     document.getElementById('demandKwVal').innerText = (totalDemandWatts / 1000).toFixed(2);
     document.getElementById('totalKvaVal').innerText = totalKva.toFixed(2);
     document.getElementById('designAmpsVal').innerText = totalMainAmps.toFixed(1);
-    document.getElementById('mainMccbVal').innerText = mainMccb + 'A';
+    document.getElementById('mainMccbVal').innerText = mainMccb === null ? 'NOT SIZED' : mainMccb + 'A';
     document.getElementById('imbalanceVal').innerText = pctUnbalance.toFixed(1) + '%';
 
     const badge = document.getElementById('imbalanceBadge');
@@ -147,6 +161,7 @@ function recalculateAll() {
 
     // Re-render Dynamic Single-Line Diagram
     renderSLD(mainMccb, totalMainAmps);
+    if (typeof saveProject === 'function') saveProject();
 }
 
 // Phase Busbar Visual Bars Update
@@ -173,6 +188,7 @@ function autoBalancePhases() {
         let minPhase = 'R';
         if (load.Y < load[minPhase]) minPhase = 'Y';
         if (load.B < load[minPhase]) minPhase = 'B';
+        if (c.sup === 3) { ['R','Y','B'].forEach(p => load[p] += c.current); c.phase = '3'; c.items.forEach(f => f.phase = '3'); return; }
         load[minPhase] += c.current;
         c.items.forEach(f => f.phase = minPhase);
     });
