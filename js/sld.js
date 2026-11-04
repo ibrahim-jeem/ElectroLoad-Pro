@@ -69,8 +69,10 @@ function bindSldNavigation(svg) {
         tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
     }, true);
-    viewport?.addEventListener('mousedown', e => {
+    document.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
+        const viewportBounds = viewport.getBoundingClientRect();
+        if (e.clientX < viewportBounds.left || e.clientX > viewportBounds.right || e.clientY < viewportBounds.top || e.clientY > viewportBounds.bottom) return;
         if (e.target.closest?.('[data-sld-toolbar]')) return;
         const point = sldPointerToView(e.clientX, e.clientY);
         sldPan = { x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
