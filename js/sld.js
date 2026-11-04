@@ -209,7 +209,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
         const second = document.createElementNS(NS, 'text');
         Object.entries({ x: x + 17, y: y + 40, 'font-size': 11, fill: '#475569' }).forEach(([k, v]) => second.setAttribute(k, v));
         second.textContent = sub; g.appendChild(second);
-        appendTitle(r, detail);
+        appendTitle(head, detail);
         group.appendChild(g);
         return g;
     };
@@ -218,10 +218,10 @@ function renderSLD(mainMccbRating, totalCurrent) {
         const box = document.createElementNS(NS, 'rect');
         Object.entries({ x: x - 15, y: y - 13, width: 30, height: 26, rx: 3, fill: '#fff', stroke: accent, 'stroke-width': 2 }).forEach(([k, v]) => box.setAttribute(k, v));
         g.appendChild(box);
-        const slash = document.createElementNS(NS, 'path');
-        slash.setAttribute('d', `M ${x - 8} ${y + 7} L ${x + 8} ${y - 7}`);
-        slash.setAttribute('stroke', accent); slash.setAttribute('stroke-width', '2.5'); slash.setAttribute('fill', 'none');
-        g.appendChild(slash);
+        const mark = document.createElementNS(NS, 'path');
+        mark.setAttribute('d', `M ${x - 7} ${y - 7} L ${x + 7} ${y + 7} M ${x + 7} ${y - 7} L ${x - 7} ${y + 7}`);
+        mark.setAttribute('stroke', accent); mark.setAttribute('stroke-width', '2'); mark.setAttribute('stroke-linecap', 'round'); mark.setAttribute('fill', 'none');
+        g.appendChild(mark);
         appendTitle(g, detail);
         group.appendChild(g);
         label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');

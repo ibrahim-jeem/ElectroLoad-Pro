@@ -36,7 +36,7 @@ test('one-phase bathroom board can be parented to one-phase bedroom switchboard'
 });
 
 test('SLD board nodes expose hover details and toolbar zoom works', async ({ page }) => {
-  const boardNode = page.locator('#sldSvg rect.sld-node').filter({ has: page.locator('title', { hasText: 'Distribution board: MDB' }) }).first();
+  const boardNode = page.locator('#sldSvg text.sld-node').filter({ has: page.locator('title', { hasText: 'Distribution board: MDB' }) }).first();
   await expect(boardNode).toHaveCount(1);
   await expect(boardNode.locator('title')).toContainText('Parent:');
   const before = await page.locator('#sldSvg').getAttribute('viewBox');
