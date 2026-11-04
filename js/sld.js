@@ -52,6 +52,7 @@ function bindSldNavigation(svg) {
     }, { passive: false });
     svg.addEventListener('pointermove', e => {
         const node = e.target.closest?.('.sld-node');
+        const tip = viewport?.querySelector('[data-sld-tooltip]');
         if (!tip) return;
         if (!node?.dataset.tip) { tip.style.display = 'none'; return; }
         tip.textContent = node.dataset.tip;
@@ -60,7 +61,7 @@ function bindSldNavigation(svg) {
         tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
     });
-    svg.addEventListener('pointerleave', () => { if (tip) tip.style.display = 'none'; });
+    svg.addEventListener('pointerleave', () => { const tip = viewport?.querySelector('[data-sld-tooltip]'); if (tip) tip.style.display = 'none'; });
     svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: sldPointerToView(e.clientX, e.clientY).scale };
