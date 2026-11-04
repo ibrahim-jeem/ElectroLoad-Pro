@@ -70,7 +70,6 @@ function bindSldNavigation(svg) {
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
     }, true);
     svg.addEventListener('mousedown', e => {
-        svg.dataset.panStartSeen = 'yes';
         if (e.button !== 0) return;
         const point = sldPointerToView(e.clientX, e.clientY);
         sldPan = { x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
@@ -78,7 +77,6 @@ function bindSldNavigation(svg) {
     });
     window.addEventListener('mousemove', e => {
         if (!sldPan) return;
-        svg.dataset.panMoveSeen = String(Number(svg.dataset.panMoveSeen || 0) + 1);
         sldView.x = sldPan.viewX - (e.clientX - sldPan.x) / sldPan.scale;
         sldView.y = sldPan.viewY - (e.clientY - sldPan.y) / sldPan.scale;
         sldApplyView();
