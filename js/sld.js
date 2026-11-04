@@ -50,26 +50,28 @@ function bindSldNavigation(svg) {
         e.preventDefault();
         changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
     };
-    window.addEventListener('wheel', wheelHandler, { passive: false, capture: true });
-    const showTooltip = (e, node) => {
-        const tip = viewport?.querySelector('[data-sld-tooltip]');
-        if (!tip || !node?.dataset?.tip) return;
-        tip.textContent = node.dataset.tip;
-        tip.style.display = 'block';
+    document.addEventListener('wheel', wheelHandler, { passive: false, capture: true });
+    document.addEventListener('mousemove', e => {
         const bounds = viewport.getBoundingClientRect();
+        const tip = viewport.querySelector('[data-sld-tooltip]');
+        if (!tip) return;
+        if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) {
+            tip.style.display = 'none';
+            return;
+        }
+        let hovered = null, smallest = Infinity;
+        svg.querySelectorAll('.sld-node').forEach(node => {
+            const r = node.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2 || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+            const area = r.width * r.height;
+            if (area < smallest) { hovered = node; smallest = area; }
+        });
+        if (!hovered?.dataset?.tip) { tip.style.display = 'none'; return; }
+        tip.textContent = hovered.dataset.tip;
+        tip.style.display = 'block';
         tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
-    };
-    svg.addEventListener('mousemove', e => {
-        const node = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.sld-node');
-        const tip = viewport?.querySelector('[data-sld-tooltip]');
-        if (!node) { if (tip) tip.style.display = 'none'; return; }
-        showTooltip(e, node);
-    });
-    svg.addEventListener('mouseleave', () => {
-        const tip = viewport?.querySelector('[data-sld-tooltip]');
-        if (tip) tip.style.display = 'none';
-    });
+    }, true);
     svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: sldPointerToView(e.clientX, e.clientY).scale };
