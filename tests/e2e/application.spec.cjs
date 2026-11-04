@@ -42,7 +42,7 @@ test('SLD board nodes expose hover details and toolbar zoom works', async ({ pag
   const before = await page.locator('#sldSvg').getAttribute('viewBox');
   await page.locator('[data-sld-toolbar] [data-zoom="in"]').click();
   expect(await page.locator('#sldSvg').getAttribute('viewBox')).not.toBe(before);
-  await page.locator('[data-sld-toolbar] [data-zoom="reset"]').click();
+  await page.locator('[data-sld-toolbar] [data-zoom="fit"]').click();
   await expect(page.locator('#sldSvg')).toHaveAttribute('viewBox', before);
 });
 
