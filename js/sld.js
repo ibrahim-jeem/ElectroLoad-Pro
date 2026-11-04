@@ -71,14 +71,13 @@ function bindSldNavigation(svg) {
     }, true);
     viewport?.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
-        const rect = svg.getBoundingClientRect();
-        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+        if (e.target.closest?.('[data-sld-toolbar]')) return;
         const point = sldPointerToView(e.clientX, e.clientY);
         sldPan = { x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
         svg.classList.add('sld-panning');
     });
     document.addEventListener('mousemove', e => {
-        if (!sldPan || e.buttons !== 1) return;
+        if (!sldPan) return;
         sldView.x = sldPan.viewX - (e.clientX - sldPan.x) / sldPan.scale;
         sldView.y = sldPan.viewY - (e.clientY - sldPan.y) / sldPan.scale;
         sldApplyView();
