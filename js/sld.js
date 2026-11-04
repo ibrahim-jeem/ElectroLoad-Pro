@@ -1,4 +1,4 @@
-/* ElectroLoad Pro | Interactive single-line diagram */
+/* ElectroLoad Pro | Interactive single-line diagram. SVG <title> elements carry accessible native fallback descriptions. */
 let sldZoom = 1;
 let sldView = null;
 let sldPan = null;
