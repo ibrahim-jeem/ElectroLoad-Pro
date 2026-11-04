@@ -71,7 +71,9 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
 test('SLD breaker symbols show compact hover details', async ({ page }) => {
   const feeder = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder circuit-breaker (provisional)' }) }).first();
   await expect(feeder).toHaveCount(1);
-  await feeder.hover();
+  const symbolBox = await feeder.boundingBox();
+  expect(symbolBox).not.toBeNull();
+  await page.mouse.move(symbolBox.x + symbolBox.width / 2, symbolBox.y + symbolBox.height / 2);
   await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
   await expect(page.locator('[data-sld-tooltip]')).toContainText('From: MDB');
   await expect(page.locator('[data-sld-tooltip]')).toContainText('To:');
