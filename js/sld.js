@@ -44,10 +44,23 @@ function bindSldNavigation(svg) {
     if (svg.dataset.navigationBound) return;
     svg.dataset.navigationBound = '1';
     const viewport = sldViewport();
-    svg.addEventListener('wheel', e => {
+    const viewport = sldViewport();
+    viewport?.addEventListener('wheel', e => {
+        if (!svg.contains(e.target)) return;
         e.preventDefault();
         changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
     }, { passive: false });
+    svg.addEventListener('pointermove', e => {
+        const node = e.target.closest?.('.sld-node');
+        if (!tip) return;
+        if (!node?.dataset.tip) { tip.style.display = 'none'; return; }
+        tip.textContent = node.dataset.tip;
+        tip.style.display = 'block';
+        const bounds = viewport.getBoundingClientRect();
+        tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
+        tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
+    });
+    svg.addEventListener('pointerleave', () => { if (tip) tip.style.display = 'none'; });
     svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: sldPointerToView(e.clientX, e.clientY).scale };
@@ -66,9 +79,7 @@ function bindSldNavigation(svg) {
     };
     svg.addEventListener('pointerup', endPan);
     svg.addEventListener('pointercancel', endPan);
-    if (viewport) viewport.addEventListener('wheel', e => {
-        if (e.target === viewport) { e.preventDefault(); changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12); }
-    }, { passive: false });
+
 }
 
 function renderSLD(mainMccbRating, totalCurrent) {
