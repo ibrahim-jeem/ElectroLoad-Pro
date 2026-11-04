@@ -44,23 +44,32 @@ function bindSldNavigation(svg) {
     if (svg.dataset.navigationBound) return;
     svg.dataset.navigationBound = '1';
     const viewport = sldViewport();
-    viewport?.addEventListener('wheel', e => {
-        if (!svg.contains(e.target)) return;
+    const wheelHandler = e => {
+        const bounds = svg.getBoundingClientRect();
+        if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) return;
         e.preventDefault();
         changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
-    }, { passive: false });
-    svg.addEventListener('pointermove', e => {
-        const node = e.target.closest?.('.sld-node');
+    };
+    window.addEventListener('wheel', wheelHandler, { passive: false, capture: true });
+    const showTooltip = (e, node) => {
         const tip = viewport?.querySelector('[data-sld-tooltip]');
-        if (!tip) return;
-        if (!node?.dataset.tip) { tip.style.display = 'none'; return; }
+        if (!tip || !node?.dataset?.tip) return;
         tip.textContent = node.dataset.tip;
         tip.style.display = 'block';
         const bounds = viewport.getBoundingClientRect();
         tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
+    };
+    svg.addEventListener('mousemove', e => {
+        const node = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.sld-node');
+        const tip = viewport?.querySelector('[data-sld-tooltip]');
+        if (!node) { if (tip) tip.style.display = 'none'; return; }
+        showTooltip(e, node);
     });
-    svg.addEventListener('pointerleave', () => { const tip = viewport?.querySelector('[data-sld-tooltip]'); if (tip) tip.style.display = 'none'; });
+    svg.addEventListener('mouseleave', () => {
+        const tip = viewport?.querySelector('[data-sld-tooltip]');
+        if (tip) tip.style.display = 'none';
+    });
     svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: sldPointerToView(e.clientX, e.clientY).scale };
