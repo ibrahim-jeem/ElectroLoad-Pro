@@ -225,7 +225,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
         const contact = document.createElementNS(NS, 'circle');
         Object.entries({ cx: x, cy: y - 4, r: 2, fill: '#fff', stroke: accent, 'stroke-width': 1.5 }).forEach(([k, v]) => contact.setAttribute(k, v));
         g.appendChild(contact);
-        appendTitle(g, detail);
+        appendTitle(box, detail);
         group.appendChild(g);
         label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');
         label((rating == null ? 'N/S' : rating + ' A') + ' · ' + (poles === '?' ? 'poles TBD' : poles + 'P'), x + 23, y + 12, 10, '#475569');
