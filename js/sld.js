@@ -69,25 +69,27 @@ function bindSldNavigation(svg) {
         tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
         tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
     }, true);
-    document.addEventListener('mousedown', e => {
+    document.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         const viewportBounds = viewport.getBoundingClientRect();
         if (e.clientX < viewportBounds.left || e.clientX > viewportBounds.right || e.clientY < viewportBounds.top || e.clientY > viewportBounds.bottom) return;
         if (e.target.closest?.('[data-sld-toolbar]')) return;
         const point = sldPointerToView(e.clientX, e.clientY);
-        sldPan = { x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
+        sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
         svg.classList.add('sld-panning');
-    });
-    document.addEventListener('mousemove', e => {
-        if (!sldPan) return;
+    }, true);
+    document.addEventListener('pointermove', e => {
+        if (!sldPan || sldPan.id !== e.pointerId) return;
         sldView.x = sldPan.viewX - (e.clientX - sldPan.x) / sldPan.scale;
         sldView.y = sldPan.viewY - (e.clientY - sldPan.y) / sldPan.scale;
         sldApplyView();
     }, true);
-    document.addEventListener('mouseup', () => {
-        sldPan = null;
+    const stopPan = e => {
+        if (sldPan && (e.pointerId == null || sldPan.id === e.pointerId)) sldPan = null;
         svg.classList.remove('sld-panning');
-    }, true);
+    };
+    document.addEventListener('pointerup', stopPan, true);
+    document.addEventListener('pointercancel', stopPan, true);
 
 }
 
