@@ -44,7 +44,6 @@ function bindSldNavigation(svg) {
     if (svg.dataset.navigationBound) return;
     svg.dataset.navigationBound = '1';
     const viewport = sldViewport();
-    const viewport = sldViewport();
     viewport?.addEventListener('wheel', e => {
         if (!svg.contains(e.target)) return;
         e.preventDefault();
