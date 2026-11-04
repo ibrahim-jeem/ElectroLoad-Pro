@@ -10,6 +10,7 @@ async function boardRow(page, name) {
 }
 
 test.beforeEach(async ({ page }) => {
+  page.on('pageerror', error => console.log('BROWSER_PAGE_ERROR', error.stack || error.message));
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
