@@ -174,6 +174,8 @@ function renderSLD(mainMccbRating, totalCurrent) {
         });
         el.addEventListener('mousemove', e => {
             if (!tip) return;
+            tip.textContent = value;
+            tip.style.display = 'block';
             const bounds = viewport.getBoundingClientRect();
             tip.style.left = Math.min(e.clientX - bounds.left + 14, bounds.width - 300) + 'px';
             tip.style.top = Math.max(8, e.clientY - bounds.top + 14) + 'px';
