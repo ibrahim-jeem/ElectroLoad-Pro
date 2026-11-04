@@ -51,8 +51,8 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
   const svg = page.locator('#sldSvg');
   const viewport = page.locator('#sldViewport');
   const before = await svg.getAttribute('viewBox');
-  const box = await svg.boundingBox();
-  await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.45);
+  const box = await viewport.boundingBox();
+  await viewport.hover();
   await page.mouse.wheel(0, -420);
   await expect.poll(() => svg.getAttribute('viewBox')).not.toBe(before);
   const zoomed = await svg.getAttribute('viewBox');
@@ -71,8 +71,7 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
 test('SLD breaker symbols show compact hover details', async ({ page }) => {
   const feeder = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder protective circuit breaker' }) }).first();
   await expect(feeder).toHaveCount(1);
-  const box = await feeder.boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await feeder.hover();
   await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
   await expect(page.locator('[data-sld-tooltip]')).toContainText('From: MDB');
   await expect(page.locator('[data-sld-tooltip]')).toContainText('To:');
