@@ -277,7 +277,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
             const cx = positions.get(child.id).x, childTop = top(child);
             line(cx, bus + (three ? 24 : 12), cx, bus + 41, '#64748b', 2, false, 'Feeder connection from ' + board.name + ' busbar to ' + child.name);
             breaker(cx, bus + 54, child.s?.cb, '?',
-                'Outgoing feeder protective circuit breaker (estimated)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
+                'Outgoing feeder circuit-breaker (provisional)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
                 '#d97706', 'FEEDER CB');
             line(cx, bus + 67, cx, childTop, '#d97706', 2, false, 'Feeder cable from ' + board.name + ' to ' + child.name + ' · cable size and route to be specified');
         });
