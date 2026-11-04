@@ -198,14 +198,14 @@ function renderSLD(mainMccbRating, totalCurrent) {
         appendTitle(g, detail);
         group.appendChild(g);
         label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');
-        label((rating == null ? 'N/S' : rating + ' A') + ' · ' + poles + 'P', x + 23, y + 12, 10, '#475569');
+        label((rating == null ? 'N/S' : rating + ' A') + ' · ' + (poles === '?' ? 'poles TBD' : poles + 'P'), x + 23, y + 12, 10, '#475569');
         return g;
     };
 
     const rootX = positions.get(root.id).x;
     card(rootX - 108, 14, 216, 46, 'Incoming supply', (is3PSystem() ? '3-phase · ' + config.voltageLL : '1-phase · ' + config.voltageLN) + ' V', 'Incoming supply: ' + config.phase + ', ' + (is3PSystem() ? config.voltageLL : config.voltageLN) + ' V', '#2563eb');
     line(rootX, 60, rootX, 78, '#64748b', 2);
-    breaker(rootX, 92, mainMccbRating, is3PSystem() ? 4 : 2, 'Main incoming circuit breaker · preliminary rating ' + (mainMccbRating == null ? 'not sized' : mainMccbRating + ' A') + ' · estimated incoming current ' + Number(totalCurrent || 0).toFixed(2) + ' A. Confirm actual device type, poles and breaking capacity.', '#0f172a', 'MAIN CB');
+    breaker(rootX, 92, mainMccbRating, '?', 'Main incoming circuit breaker · preliminary rating ' + (mainMccbRating == null ? 'not sized' : mainMccbRating + ' A') + ' · estimated incoming current ' + Number(totalCurrent || 0).toFixed(2) + ' A. Confirm actual device type, poles and breaking capacity.', '#0f172a', 'MAIN CB');
     line(rootX, 105, rootX, 138, '#64748b', 2);
     const top = b => 138 + positions.get(b.id).depth * 300;
     const busY = b => top(b) + 105;
@@ -243,7 +243,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
             line(cx, bus + (three ? 24 : 12), cx, bus + 43, c.sup === 3 ? '#64748b' : (colors[c.phase] || colors.R), 2);
-            breaker(cx, bus + 56, c.mcb, c.sup || 1, 'Outgoing final circuit ' + c.id + '\nBoard: ' + board.name + '\nLoads: ' + c.items.map(f => f.name).join(', ') + '\nRooms: ' + c.rooms.join(', ') + '\nLoad: ' + Number(c.watts).toFixed(0) + ' W\nDesign current: ' + current + ' A\nBreaker estimate: ' + (c.mcb == null ? 'NOT SIZED' : c.mcb + ' A') + '\nPhase: ' + c.phase, '#2563eb', 'MCB');
+            breaker(cx, bus + 56, c.mcb, '?', 'Outgoing final circuit ' + c.id + '\nBoard: ' + board.name + '\nLoads: ' + c.items.map(f => f.name).join(', ') + '\nRooms: ' + c.rooms.join(', ') + '\nLoad: ' + Number(c.watts).toFixed(0) + ' W\nDesign current: ' + current + ' A\nBreaker estimate: ' + (c.mcb == null ? 'NOT SIZED' : c.mcb + ' A') + '\nPhase: ' + c.phase, '#2563eb', 'MCB');
             line(cx, bus + 69, cx, bus + 82, '#64748b', 1.5);
             label(c.id, cx, bus + 98, 12, '#334155', 'middle', '700');
             label(Number(c.watts).toFixed(0) + ' W', cx, bus + 113, 10, '#64748b');
@@ -251,12 +251,12 @@ function renderSLD(mainMccbRating, totalCurrent) {
         kids.forEach(child => {
             const cx = positions.get(child.id).x, childTop = top(child);
             line(cx, bus + (three ? 24 : 12), cx, bus + 41, '#64748b', 2);
-            breaker(cx, bus + 54, child.s?.cb, bSup(child) === 3 ? 4 : 2,
+            breaker(cx, bus + 54, child.s?.cb, '?',
                 'Outgoing feeder protective circuit breaker (estimated)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
                 '#d97706', 'FEEDER CB');
             line(cx, bus + 67, cx, childTop, '#d97706', 2);
         });
     }
-    label('Conceptual SLD · feeder topology follows the selected parent board · ratings are preliminary estimates', 16, height - 16, 10, '#b45309');
+    label('Conceptual SLD · feeder topology follows the selected parent board · ratings are preliminary; poles and device class to be confirmed', 16, height - 16, 10, '#b45309');
     sldApplyView();
 }
