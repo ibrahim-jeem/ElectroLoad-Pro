@@ -227,6 +227,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
         g.appendChild(contact);
         appendTitle(symbol, detail);
         appendTitle(contact, detail);
+        const hitArea = document.createElementNS(NS, 'rect');
+        Object.entries({ x: x - 15, y: y - 15, width: 30, height: 30, fill: 'transparent', stroke: 'none' }).forEach(([k, v]) => hitArea.setAttribute(k, v));
+        hitArea.style.pointerEvents = 'all';
+        g.appendChild(hitArea);
+        appendTitle(hitArea, detail);
         group.appendChild(g);
         label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');
         label((rating == null ? 'N/S' : rating + ' A') + ' · ' + (poles === '?' ? 'poles TBD' : poles + 'P'), x + 23, y + 12, 10, '#475569');
