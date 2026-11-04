@@ -62,7 +62,6 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
   await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.48, { steps: 5 });
   await page.mouse.up();
   const panned = (await svg.getAttribute('viewBox')).split(' ').map(Number);
-  console.log('SLD pan diagnostics', await svg.evaluate(el => ({ start: el.dataset.panStartSeen, moves: el.dataset.panMoveSeen, viewBox: el.getAttribute('viewBox') })));
   expect(panned[0] !== values[0] || panned[1] !== values[1]).toBeTruthy();
   await page.locator('[data-sld-toolbar] [data-zoom="fit"]').click();
   await expect(svg).toHaveAttribute('viewBox', before);
