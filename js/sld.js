@@ -8,14 +8,23 @@ function sldApplyView() {
     const svg = document.getElementById('sldSvg');
     if (svg && sldView) svg.setAttribute('viewBox', [sldView.x, sldView.y, sldView.w, sldView.h].join(' '));
 }
+function sldPointerToView(clientX, clientY) {
+    const svg = document.getElementById('sldSvg');
+    const rect = svg.getBoundingClientRect();
+    const scale = Math.min(rect.width / sldView.w, rect.height / sldView.h);
+    const offsetX = (rect.width - sldView.w * scale) / 2;
+    const offsetY = (rect.height - sldView.h * scale) / 2;
+    return { x: sldView.x + (clientX - rect.left - offsetX) / scale, y: sldView.y + (clientY - rect.top - offsetY) / scale, scale };
+}
 function changeSldZoom(factor, clientX, clientY) {
     const svg = document.getElementById('sldSvg');
     if (!svg || !sldView) return;
     const rect = svg.getBoundingClientRect();
     const px = Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2;
     const py = Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2;
-    const ax = sldView.x + ((px - rect.left) / rect.width) * sldView.w;
-    const ay = sldView.y + ((py - rect.top) / rect.height) * sldView.h;
+    const point = sldPointerToView(px, py);
+    const ax = point.x;
+    const ay = point.y;
     const next = Math.max(0.55, Math.min(4, sldZoom * factor));
     const ratio = sldZoom / next;
     sldView = { x: ax - (ax - sldView.x) * ratio, y: ay - (ay - sldView.y) * ratio, w: sldView.w * ratio, h: sldView.h * ratio };
@@ -41,15 +50,14 @@ function bindSldNavigation(svg) {
     }, { passive: false });
     svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
-        sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y };
+        sldPan = { id: e.pointerId, x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: sldPointerToView(e.clientX, e.clientY).scale };
         svg.setPointerCapture(e.pointerId);
         svg.classList.add('sld-panning');
     });
     svg.addEventListener('pointermove', e => {
         if (!sldPan || sldPan.id !== e.pointerId) return;
-        const rect = svg.getBoundingClientRect();
-        sldView.x = sldPan.viewX - (e.clientX - sldPan.x) * sldView.w / rect.width;
-        sldView.y = sldPan.viewY - (e.clientY - sldPan.y) * sldView.h / rect.height;
+        sldView.x = sldPan.viewX - (e.clientX - sldPan.x) / sldPan.scale;
+        sldView.y = sldPan.viewY - (e.clientY - sldPan.y) / sldPan.scale;
         sldApplyView();
     });
     const endPan = e => {
