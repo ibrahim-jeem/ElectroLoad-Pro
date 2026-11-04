@@ -215,13 +215,14 @@ function renderSLD(mainMccbRating, totalCurrent) {
     };
     const breaker = (x, y, rating, poles, detail, accent = '#d69e00', kind = 'CB') => {
         const g = document.createElementNS(NS, 'g');
-        const box = document.createElementNS(NS, 'rect');
-        Object.entries({ x: x - 15, y: y - 13, width: 30, height: 26, rx: 3, fill: '#fff', stroke: accent, 'stroke-width': 2 }).forEach(([k, v]) => box.setAttribute(k, v));
-        g.appendChild(box);
-        const mark = document.createElementNS(NS, 'path');
-        mark.setAttribute('d', `M ${x - 7} ${y - 7} L ${x + 7} ${y + 7} M ${x + 7} ${y - 7} L ${x - 7} ${y + 7}`);
-        mark.setAttribute('stroke', accent); mark.setAttribute('stroke-width', '2'); mark.setAttribute('stroke-linecap', 'round'); mark.setAttribute('fill', 'none');
-        g.appendChild(mark);
+        // IEC 60617-style circuit-breaker contact: open contact, moving blade and trip mark.
+        const symbol = document.createElementNS(NS, 'path');
+        symbol.setAttribute('d', `M ${x} ${y - 13} L ${x} ${y - 4} M ${x} ${y + 4} L ${x} ${y + 13} M ${x + 1} ${y - 4} L ${x + 9} ${y - 12} M ${x + 11} ${y - 15} l 5 5 m 0 -5 l -5 5`);
+        symbol.setAttribute('stroke', accent); symbol.setAttribute('stroke-width', '2.2'); symbol.setAttribute('stroke-linecap', 'round'); symbol.setAttribute('stroke-linejoin', 'round'); symbol.setAttribute('fill', 'none');
+        g.appendChild(symbol);
+        const contact = document.createElementNS(NS, 'circle');
+        Object.entries({ cx: x, cy: y - 4, r: 2, fill: '#fff', stroke: accent, 'stroke-width': 1.5 }).forEach(([k, v]) => contact.setAttribute(k, v));
+        g.appendChild(contact);
         appendTitle(g, detail);
         group.appendChild(g);
         label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');
