@@ -31,8 +31,8 @@ test('one-phase bathroom board can be parented to one-phase bedroom switchboard'
   const hierarchy = await page.evaluate(() => boards.map(b => ({ id: b.id, parent: b.par, supply: bSup(b) })));
   expect(hierarchy.find(b => b.id === 'b2')).toMatchObject({ parent: 'b1', supply: 1 });
   const titles = await page.locator('#sldSvg title').allTextContents();
-  expect(titles.some(t => t.includes('Feeder from Bedroom Main Switchboard to Bedroom Bathroom Switchboard'))).toBeTruthy();
-  expect(titles.some(t => t.includes('Feeder from MDB to Bedroom Bathroom Switchboard'))).toBeFalsy();
+  expect(titles.some(t => t.includes('From: Bedroom Main Switchboard') && t.includes('To: Bedroom Bathroom Switchboard'))).toBeTruthy();
+  expect(titles.some(t => t.includes('From: MDB') && t.includes('To: Bedroom Bathroom Switchboard'))).toBeFalsy();
 });
 
 test('SLD board nodes expose hover details and toolbar zoom works', async ({ page }) => {
