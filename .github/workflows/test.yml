@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-save @playwright/test
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - run: npx playwright test
         env:
           CI: true
