@@ -51,8 +51,8 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
   const svg = page.locator('#sldSvg');
   const viewport = page.locator('#sldViewport');
   const before = await svg.getAttribute('viewBox');
-  const box = await viewport.boundingBox();
   await viewport.hover();
+  const box = await viewport.boundingBox();
   await page.mouse.wheel(0, -420);
   await expect.poll(() => svg.getAttribute('viewBox')).not.toBe(before);
   const zoomed = await svg.getAttribute('viewBox');
