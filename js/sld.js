@@ -10,24 +10,32 @@ function sldApplyView() {
 }
 function sldPointerToView(clientX, clientY) {
     const svg = document.getElementById('sldSvg');
-    const rect = svg.getBoundingClientRect();
-    const scale = Math.min(rect.width / sldView.w, rect.height / sldView.h);
-    const offsetX = (rect.width - sldView.w * scale) / 2;
-    const offsetY = (rect.height - sldView.h * scale) / 2;
-    return { x: sldView.x + (clientX - rect.left - offsetX) / scale, y: sldView.y + (clientY - rect.top - offsetY) / scale, scale };
+    if (!svg || !sldView) return null;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return null;
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    const local = point.matrixTransform(matrix.inverse());
+    return { x: local.x, y: local.y, scaleX: matrix.a, scaleY: matrix.d };
 }
 function changeSldZoom(factor, clientX, clientY) {
     const svg = document.getElementById('sldSvg');
     if (!svg || !sldView) return;
     const rect = svg.getBoundingClientRect();
-    const px = Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2;
-    const py = Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2;
-    const point = sldPointerToView(px, py);
-    const ax = point.x;
-    const ay = point.y;
-    const next = Math.max(0.55, Math.min(4, sldZoom * factor));
+    const point = sldPointerToView(
+        Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2,
+        Number.isFinite(clientY) ? clientY : rect.top + rect.height / 2
+    );
+    if (!point) return;
+    const next = Math.max(0.45, Math.min(5, sldZoom * factor));
     const ratio = sldZoom / next;
-    sldView = { x: ax - (ax - sldView.x) * ratio, y: ay - (ay - sldView.y) * ratio, w: sldView.w * ratio, h: sldView.h * ratio };
+    sldView = {
+        x: point.x - (point.x - sldView.x) * ratio,
+        y: point.y - (point.y - sldView.y) * ratio,
+        w: sldView.w * ratio,
+        h: sldView.h * ratio
+    };
     sldZoom = next;
     sldApplyView();
 }
@@ -46,49 +54,48 @@ function bindSldNavigation(svg) {
     const viewport = sldViewport();
     viewport?.addEventListener('wheel', e => {
         e.preventDefault();
-        changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
+        const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * viewport.clientHeight : e.deltaY;
+        const factor = Math.exp(-delta * 0.0016);
+        changeSldZoom(factor, e.clientX, e.clientY);
     }, { passive: false });
-    document.addEventListener('mousemove', e => {
-        const bounds = viewport.getBoundingClientRect();
-        const tip = viewport.querySelector('[data-sld-tooltip]');
-        if (!tip) return;
-        if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) {
-            tip.style.display = 'none';
-            return;
-        }
-        let hovered = null, smallest = Infinity;
-        svg.querySelectorAll('.sld-node').forEach(node => {
-            const r = node.getBoundingClientRect();
-            if (r.width < 2 || r.height < 2 || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-            const area = r.width * r.height;
-            if (area < smallest) { hovered = node; smallest = area; }
-        });
-        if (!hovered?.dataset?.tip) { tip.style.display = 'none'; return; }
-        tip.textContent = hovered.dataset.tip;
-        tip.style.display = 'block';
-        tip.style.left = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - 300)) + 'px';
-        tip.style.top = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - 90)) + 'px';
-    }, true);
-    svg.addEventListener('mousedown', e => {
+
+    let drag = null;
+    svg.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
-        const point = sldPointerToView(e.clientX, e.clientY);
-        sldPan = { x: e.clientX, y: e.clientY, viewX: sldView.x, viewY: sldView.y, scale: point.scale };
+        const rect = svg.getBoundingClientRect();
+        drag = {
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            viewX: sldView.x,
+            viewY: sldView.y,
+            scaleX: sldView.w / Math.max(1, rect.width),
+            scaleY: sldView.h / Math.max(1, rect.height),
+            moved: false
+        };
+        svg.setPointerCapture?.(e.pointerId);
         svg.classList.add('sld-panning');
     });
-    window.addEventListener('mousemove', e => {
-        if (!sldPan) return;
-        sldView.x = sldPan.viewX - (e.clientX - sldPan.x) / sldPan.scale;
-        sldView.y = sldPan.viewY - (e.clientY - sldPan.y) / sldPan.scale;
+    svg.addEventListener('pointermove', e => {
+        if (!drag || drag.pointerId !== e.pointerId) return;
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+        if (!drag.moved) return;
+        svg.dataset.panMoveSeen = String(Number(svg.dataset.panMoveSeen || 0) + 1);
+        sldView.x = drag.viewX - dx * drag.scaleX;
+        sldView.y = drag.viewY - dy * drag.scaleY;
         sldApplyView();
     });
-    window.addEventListener('mouseup', () => {
-        sldPan = null;
+    const finishDrag = e => {
+        if (!drag || (e && drag.pointerId !== e.pointerId)) return;
+        drag = null;
         svg.classList.remove('sld-panning');
-    });
-
-
+    };
+    svg.addEventListener('pointerup', finishDrag);
+    svg.addEventListener('pointercancel', finishDrag);
+    svg.addEventListener('lostpointercapture', finishDrag);
 }
-
 function renderSLD(mainMccbRating, totalCurrent) {
     const svg = document.getElementById('sldSvg');
     if (!svg) return;
@@ -202,7 +209,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
         const second = document.createElementNS(NS, 'text');
         Object.entries({ x: x + 17, y: y + 40, 'font-size': 11, fill: '#475569' }).forEach(([k, v]) => second.setAttribute(k, v));
         second.textContent = sub; g.appendChild(second);
-        appendTitle(g, detail);
+        appendTitle(r, detail);
         group.appendChild(g);
         return g;
     };
@@ -247,20 +254,16 @@ function renderSLD(mainMccbRating, totalCurrent) {
         const all = [...taps, ...childXs];
         const left = all.length ? Math.min(x, ...all) - 34 : x - 100;
         const right = all.length ? Math.max(x, ...all) + 34 : x + 100;
+        const busDetail = board.name + ' busbar · ' + (three ? 'R/Y/B/N 3-phase' : 'single-phase and neutral') + ' · outgoing circuits: ' + own.length + ' · downstream boards: ' + kids.length;
         if (three) {
-            line(left, bus, right, bus, colors.R, 4);
-            line(left, bus + 7, right, bus + 7, colors.Y, 4);
-            line(left, bus + 14, right, bus + 14, colors.B, 4);
-            line(left, bus + 21, right, bus + 21, colors.N, 1.5, true);
+            line(left, bus, right, bus, colors.R, 4, false, busDetail + ' · Phase R');
+            line(left, bus + 7, right, bus + 7, colors.Y, 4, false, busDetail + ' · Phase Y');
+            line(left, bus + 14, right, bus + 14, colors.B, 4, false, busDetail + ' · Phase B');
+            line(left, bus + 21, right, bus + 21, colors.N, 1.5, true, busDetail + ' · Neutral');
         } else {
-            line(left, bus, right, bus, colors[board.e] || colors.R, 4);
-            line(left, bus + 9, right, bus + 9, colors.N, 1.5, true);
+            line(left, bus, right, bus, colors[board.e] || colors.R, 4, false, busDetail + ' · Line');
+            line(left, bus + 9, right, bus + 9, colors.N, 1.5, true, busDetail + ' · Neutral');
         }
-        const busHit = document.createElementNS(NS, 'rect');
-        Object.entries({ x: left, y: bus - 5, width: Math.max(24, right - left), height: three ? 31 : 19, fill: 'transparent', stroke: 'none' }).forEach(([k, v]) => busHit.setAttribute(k, v));
-        busHit.style.pointerEvents = 'all';
-        appendTitle(busHit, board.name + ' busbar · ' + (three ? 'R/Y/B/N 3-phase' : 'single-phase and neutral') + ' · connected outgoing circuits: ' + own.length + ' · downstream boards: ' + kids.length);
-        group.appendChild(busHit);
         label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#475569');
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
@@ -272,7 +275,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
         });
         kids.forEach(child => {
             const cx = positions.get(child.id).x, childTop = top(child);
-            line(cx, bus + (three ? 24 : 12), cx, bus + 41, '#64748b', 2);
+            line(cx, bus + (three ? 24 : 12), cx, bus + 41, '#64748b', 2, false, 'Feeder connection from ' + board.name + ' busbar to ' + child.name);
             breaker(cx, bus + 54, child.s?.cb, '?',
                 'Outgoing feeder protective circuit breaker (estimated)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
                 '#d97706', 'FEEDER CB');

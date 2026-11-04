@@ -74,6 +74,7 @@ main, header, footer {
 /* SLD interaction surface */
 .sld-viewport {
     position: relative;
+    overscroll-behavior: contain;
     height: 560px;
     overflow: hidden;
     touch-action: none;
@@ -91,13 +92,16 @@ main, header, footer {
     user-select: none;
 }
 .sld-viewport #sldSvg.sld-panning { cursor: grabbing; }
-.sld-node { cursor: crosshair; }
+.sld-node { cursor: help; }
+.sld-viewport #sldSvg.sld-panning { cursor: grabbing; }
+.sld-viewport #sldSvg { cursor: grab; }
 .sld-node:hover { filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.24)); }
 .sld-tooltip {
     display: none;
     position: absolute;
     z-index: 20;
-    max-width: 290px;
+    width: max-content;
+    max-width: min(290px, calc(100% - 16px));
     white-space: pre-line;
     pointer-events: none;
     padding: 10px 12px;

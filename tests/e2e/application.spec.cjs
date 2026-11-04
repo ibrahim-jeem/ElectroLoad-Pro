@@ -36,7 +36,7 @@ test('one-phase bathroom board can be parented to one-phase bedroom switchboard'
 });
 
 test('SLD board nodes expose hover details and toolbar zoom works', async ({ page }) => {
-  const boardNode = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Distribution board: MDB' }) }).first();
+  const boardNode = page.locator('#sldSvg rect.sld-node').filter({ has: page.locator('title', { hasText: 'Distribution board: MDB' }) }).first();
   await expect(boardNode).toHaveCount(1);
   await expect(boardNode.locator('title')).toContainText('Parent:');
   const before = await page.locator('#sldSvg').getAttribute('viewBox');
@@ -69,7 +69,7 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
 });
 
 test('SLD breaker symbols show compact hover details', async ({ page }) => {
-  const feeder = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder protective circuit breaker' }) }).first();
+  const feeder = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder circuit-breaker (provisional)' }) }).first();
   await expect(feeder).toHaveCount(1);
   await feeder.hover();
   await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
