@@ -154,10 +154,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
         });
         el.addEventListener('pointerleave', () => { if (tip) tip.style.display = 'none'; });
     };
-    const line = (x1, y1, x2, y2, color = '#64748b', widthPx = 2, dash = false) => {
+    const line = (x1, y1, x2, y2, color = '#64748b', widthPx = 2, dash = false, detail = '') => {
         const el = document.createElementNS(NS, 'line');
         Object.entries({ x1, y1, x2, y2, stroke: color, 'stroke-width': widthPx, 'stroke-linecap': 'round' }).forEach(([k, v]) => el.setAttribute(k, v));
         if (dash) el.setAttribute('stroke-dasharray', '6 5');
+        if (detail) { el.style.pointerEvents = 'stroke'; appendTitle(el, detail); }
         group.appendChild(el);
         return el;
     };
@@ -236,9 +237,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
             line(left, bus, right, bus, colors[board.e] || colors.R, 4);
             line(left, bus + 9, right, bus + 9, colors.N, 1.5, true);
         }
-        const busGroup = document.createElementNS(NS, 'g');
-        appendTitle(busGroup, board.name + ' busbar · ' + (three ? 'R/Y/B/N 3-phase' : 'single-phase and neutral') + ' · connected outgoing circuits: ' + own.length + ' · downstream boards: ' + kids.length);
-        group.appendChild(busGroup);
+        const busHit = document.createElementNS(NS, 'rect');
+        Object.entries({ x: left, y: bus - 5, width: Math.max(24, right - left), height: three ? 31 : 19, fill: 'transparent', stroke: 'none' }).forEach(([k, v]) => busHit.setAttribute(k, v));
+        busHit.style.pointerEvents = 'all';
+        appendTitle(busHit, board.name + ' busbar · ' + (three ? 'R/Y/B/N 3-phase' : 'single-phase and neutral') + ' · connected outgoing circuits: ' + own.length + ' · downstream boards: ' + kids.length);
+        group.appendChild(busHit);
         label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#475569');
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
@@ -254,7 +257,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
             breaker(cx, bus + 54, child.s?.cb, '?',
                 'Outgoing feeder protective circuit breaker (estimated)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
                 '#d97706', 'FEEDER CB');
-            line(cx, bus + 67, cx, childTop, '#d97706', 2);
+            line(cx, bus + 67, cx, childTop, '#d97706', 2, false, 'Feeder cable from ' + board.name + ' to ' + child.name + ' · cable size and route to be specified');
         });
     }
     label('Conceptual SLD · feeder topology follows the selected parent board · ratings are preliminary; poles and device class to be confirmed', 16, height - 16, 10, '#b45309');
