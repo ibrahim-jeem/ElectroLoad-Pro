@@ -81,8 +81,9 @@ main, header, footer {
     background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
     background-size: 18px 18px;
 }
-.sld-viewport #sldSvg {
+ .sld-viewport #sldSvg {
     display: block;
+    pointer-events: all;
     height: calc(100% - 42px) !important;
     min-width: 0 !important;
     cursor: grab;
