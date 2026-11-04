@@ -70,3 +70,43 @@ main, header, footer {
     body { background: white !important; color: black !important; }
     .print-break { page-break-before: always; }
 }
+
+/* SLD interaction surface */
+.sld-viewport {
+    position: relative;
+    height: 560px;
+    overflow: hidden;
+    touch-action: none;
+    background-color: #f8fafc;
+    background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
+    background-size: 18px 18px;
+}
+.sld-viewport #sldSvg {
+    display: block;
+    height: calc(100% - 42px) !important;
+    min-width: 0 !important;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+.sld-viewport #sldSvg.sld-panning { cursor: grabbing; }
+.sld-node { cursor: crosshair; }
+.sld-node:hover { filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.24)); }
+.sld-tooltip {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    max-width: 290px;
+    white-space: pre-line;
+    pointer-events: none;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, .35);
+    border-radius: 10px;
+    background: #0f172a;
+    color: #f8fafc;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .25);
+    font: 500 12px/1.55 'Plus Jakarta Sans', sans-serif;
+}
+@media (max-width: 640px) {
+    .sld-viewport { height: 440px; }
+}
