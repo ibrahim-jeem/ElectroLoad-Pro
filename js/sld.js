@@ -44,13 +44,10 @@ function bindSldNavigation(svg) {
     if (svg.dataset.navigationBound) return;
     svg.dataset.navigationBound = '1';
     const viewport = sldViewport();
-    const wheelHandler = e => {
-        const bounds = svg.getBoundingClientRect();
-        if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) return;
+    viewport?.addEventListener('wheel', e => {
         e.preventDefault();
         changeSldZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY);
-    };
-    document.addEventListener('wheel', wheelHandler, { passive: false, capture: true });
+    }, { passive: false });
     document.addEventListener('mousemove', e => {
         const bounds = viewport.getBoundingClientRect();
         const tip = viewport.querySelector('[data-sld-tooltip]');
@@ -160,7 +157,8 @@ function renderSLD(mainMccbRating, totalCurrent) {
         el.appendChild(title);
         el.dataset.tip = value;
         el.classList.add('sld-node');
-        el.addEventListener('pointerenter', e => {
+        el.style.pointerEvents = 'all';
+        el.addEventListener('mouseenter', e => {
             if (!tip) return;
             tip.textContent = value;
             tip.style.display = 'block';
@@ -168,13 +166,13 @@ function renderSLD(mainMccbRating, totalCurrent) {
             tip.style.left = Math.min(e.clientX - bounds.left + 14, bounds.width - 300) + 'px';
             tip.style.top = Math.max(8, e.clientY - bounds.top + 14) + 'px';
         });
-        el.addEventListener('pointermove', e => {
+        el.addEventListener('mousemove', e => {
             if (!tip) return;
             const bounds = viewport.getBoundingClientRect();
             tip.style.left = Math.min(e.clientX - bounds.left + 14, bounds.width - 300) + 'px';
             tip.style.top = Math.max(8, e.clientY - bounds.top + 14) + 'px';
         });
-        el.addEventListener('pointerleave', () => { if (tip) tip.style.display = 'none'; });
+        el.addEventListener('mouseleave', () => { if (tip) tip.style.display = 'none'; });
     };
     const line = (x1, y1, x2, y2, color = '#64748b', widthPx = 2, dash = false, detail = '') => {
         const el = document.createElementNS(NS, 'line');
