@@ -35,15 +35,47 @@ test('one-phase bathroom board can be parented to one-phase bedroom switchboard'
   expect(titles.some(t => t.includes('Feeder from MDB to Bedroom Bathroom Switchboard'))).toBeFalsy();
 });
 
-test('SLD board nodes expose hover details and zoom controls change the viewport', async ({ page }) => {
+test('SLD board nodes expose hover details and toolbar zoom works', async ({ page }) => {
   const boardNode = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Board: MDB' }) }).first();
   await expect(boardNode).toHaveCount(1);
-  await expect(boardNode.locator('title')).toContainText('parent');
+  await expect(boardNode.locator('title')).toContainText('Parent:');
   const before = await page.locator('#sldSvg').getAttribute('viewBox');
   await page.locator('[data-sld-toolbar] [data-zoom="in"]').click();
   expect(await page.locator('#sldSvg').getAttribute('viewBox')).not.toBe(before);
   await page.locator('[data-sld-toolbar] [data-zoom="reset"]').click();
   await expect(page.locator('#sldSvg')).toHaveAttribute('viewBox', before);
+});
+
+
+test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ page }) => {
+  const svg = page.locator('#sldSvg');
+  const viewport = page.locator('#sldViewport');
+  const before = await svg.getAttribute('viewBox');
+  const box = await svg.boundingBox();
+  await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.45);
+  await page.mouse.wheel(0, -420);
+  await expect.poll(() => svg.getAttribute('viewBox')).not.toBe(before);
+  const zoomed = await svg.getAttribute('viewBox');
+  const values = zoomed.split(' ').map(Number);
+  await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.55);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.42, box.y + box.height * 0.48, { steps: 5 });
+  await page.mouse.up();
+  const panned = (await svg.getAttribute('viewBox')).split(' ').map(Number);
+  expect(panned[0] !== values[0] || panned[1] !== values[1]).toBeTruthy();
+  await page.locator('[data-sld-toolbar] [data-zoom="fit"]').click();
+  await expect(svg).toHaveAttribute('viewBox', before);
+  await expect(viewport.locator('[data-sld-tooltip]')).toBeAttached();
+});
+
+test('SLD breaker symbols show compact hover details', async ({ page }) => {
+  const feeder = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder protective circuit breaker' }) }).first();
+  await expect(feeder).toHaveCount(1);
+  const box = await feeder.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
+  await expect(page.locator('[data-sld-tooltip]')).toContainText('From: MDB');
+  await expect(page.locator('[data-sld-tooltip]')).toContainText('To:');
 });
 
 test('project data survives a full browser reload', async ({ page }) => {
