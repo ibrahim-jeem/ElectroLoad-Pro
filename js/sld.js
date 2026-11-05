@@ -119,7 +119,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
     place(root, 0);
     const depth = Math.max(0, ...[...positions.values()].map(p => p.depth));
     const width = Math.max(1000, margin * 2 + Math.max(0, leaf - 1) * step);
-    const height = 250 + (depth + 1) * 300;
+    const height = 250 + (depth + 1) * 300 + 120; // reserve a clear drawing-title-block band
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
     svg.dataset.baseWidth = width;
