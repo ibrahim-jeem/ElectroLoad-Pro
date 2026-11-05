@@ -12,7 +12,7 @@ For each circuit and board feeder, V2 follows this order:
 4. Check steady-state voltage drop:
    - Single phase: \(\Delta U = 2 I L (R\cos\phi + X\sin\phi)\)
    - Balanced three phase: \(\Delta U = \sqrt{3} I L (R\cos\phi + X\sin\phi)\)
-   - \(L\) is one-way cable length in km; \(R\) and \(X\) are in Ω/km.
+   - \(L\) is one-way cable length in km; \(R\) and \(X\) are in Ω/km. The reactance default is 0.08 Ω/km as a screening assumption; replace it with cable-manufacturer data for the actual construction.
    - Copper resistance is adjusted from 20°C using \(R_\theta=R_{20}[1+0.00393(\theta-20)]\).
 5. Select a simplified PE size using the IEC 60364-5-54 cross-section relationship, with the Bangladesh residential guideline's 4 mm² ECC minimum applied in the BNBC/Residential profile.
 6. Where a fault current and disconnection time are entered, screen short-circuit thermal withstand with \(S \ge I\sqrt{t}/k\). The enabled Cu/PVC screening coefficient is \(k=115\).
