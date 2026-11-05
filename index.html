@@ -53,18 +53,16 @@
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
 
-        <!-- Project Design Basis -->
-        <section id="projectDesignBasis" class="bg-slate-900 border border-sky-700/50 rounded-2xl p-5 shadow-xl no-print">
-          <div class="project-basis-content">
-            <div><h2 class="font-bold text-slate-100 text-sm uppercase tracking-wider"><i class="fa-solid fa-building text-sky-400 mr-2"></i>Project Design Basis</h2><p class="text-xs text-slate-400 mt-1">Start by selecting the building category. Category selection does not invent demand or derating factors.</p></div>
-            <label class="text-xs text-slate-300 block">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Residential">Residential</option><option value="Commercial">Commercial</option><option value="Industrial">Industrial</option></select></label>
-            <p id="projectTypeNote" class="text-[11px] text-amber-300">Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.</p>
-          </div>
-        </section>
-
         <!-- Project Management / Module 5 -->
         <section id="projectManager" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl no-print">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-sm font-bold uppercase tracking-wider text-slate-100"><i class="fa-solid fa-folder-open text-sky-400 mr-2"></i>Project Workspace</h2><p class="text-xs text-slate-400 mt-1">Save named projects locally, reopen them, or exchange a portable project backup.</p></div><div class="flex flex-wrap gap-2"><button id="projectNewBtn" class="workspace-btn">New</button><button id="projectSaveBtn" class="workspace-btn workspace-btn-primary">Save Project</button><button id="projectExportBtn" class="workspace-btn">Export .elpro.json</button><label class="workspace-btn cursor-pointer">Import<input id="projectImportInput" type="file" accept=".json,.elpro.json,application/json" class="hidden"></label></div></div>
+          <div id="projectDesignBasis" class="rounded-xl border border-sky-700/40 bg-slate-950/50 p-3 mb-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="min-w-0 flex-1"><h3 class="font-bold text-slate-100 text-xs uppercase tracking-wider"><i class="fa-solid fa-building text-sky-400 mr-2"></i>Project Design Basis</h3><p class="text-[11px] text-slate-400 mt-1">Select the building category. No undocumented demand or derating factors are assumed.</p></div>
+              <label class="text-xs text-slate-300 w-full sm:w-56">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Residential">Residential</option><option value="Commercial">Commercial</option><option value="Industrial">Industrial</option></select></label>
+            </div>
+            <p id="projectTypeNote" class="text-[11px] text-amber-300 mt-2">Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.</p>
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 text-xs"><label class="text-slate-400">Project name<input id="projectName" class="workspace-input" placeholder="e.g. Gulshan Residence"></label><label class="text-slate-400">Client<input id="projectClient" class="workspace-input" placeholder="Client / organization"></label><label class="text-slate-400">Site location<input id="projectLocation" class="workspace-input" placeholder="Project address"></label><label class="text-slate-400">Prepared by<input id="projectDesigner" class="workspace-input" placeholder="Engineer / designer"></label><label class="text-slate-400">Drawing number<input id="projectDrawingNo" class="workspace-input" placeholder="ELP-E-001"></label><label class="text-slate-400">Revision<input id="projectRevision" class="workspace-input" value="A"></label></div>
           <div class="flex flex-wrap items-center gap-3 mt-3 text-xs"><label class="text-slate-400">Saved projects<select id="projectPicker" class="workspace-input min-w-56"><option value="default">Current working project</option></select></label><span id="projectManagerStatus" class="text-emerald-300" aria-live="polite">Autosave active in this browser</span></div>
         </section>
