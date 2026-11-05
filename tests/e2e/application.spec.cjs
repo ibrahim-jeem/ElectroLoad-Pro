@@ -192,6 +192,7 @@ test('cable sizing settings and circuit fault inputs persist after reload', asyn
   await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
   await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
   await expect(page.locator('#cableSizingBody [data-cable-icu]').first()).toHaveValue('6');
+  await expect(page.locator('#cableSizingBody [data-cable-icu]').first()).toHaveValue('6');
 });
 
 test('project category and additional distribution board types are available and persist', async ({ page }) => {
