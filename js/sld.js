@@ -242,9 +242,13 @@ function renderSLD(mainMccbRating, totalCurrent) {
     };
     const breaker = (x, y, rating, poles, detail, accent = '#d69e00', kind = 'CB') => {
         const g = document.createElementNS(NS, 'g');
-        // IEC 60617-style circuit-breaker contact: open contact, moving blade and trip mark.
-        const symbol = document.createElementNS(NS, 'path');
-        symbol.setAttribute('d', `M ${x} ${y - 13} L ${x} ${y - 4} M ${x} ${y + 4} L ${x} ${y + 13} M ${x + 1} ${y - 4} L ${x + 9} ${y - 12} M ${x + 11} ${y - 15} l 5 5 m 0 -5 l -5 5`);
+        // IEC-inspired open-contact or ANSI/NEMA-inspired boxed device notation.
+        const symbol = document.createElementNS(NS, engineering.sldConvention === 'ANSI' ? 'rect' : 'path');
+        if (engineering.sldConvention === 'ANSI') {
+            Object.entries({ x: x - 9, y: y - 13, width: 18, height: 26, rx: 2 }).forEach(([k, v]) => symbol.setAttribute(k, v));
+        } else {
+            symbol.setAttribute('d', `M ${x} ${y - 13} L ${x} ${y - 4} M ${x} ${y + 4} L ${x} ${y + 13} M ${x + 1} ${y - 4} L ${x + 9} ${y - 12} M ${x + 11} ${y - 15} l 5 5 m 0 -5 l -5 5`);
+        }
         symbol.setAttribute('stroke', accent); symbol.setAttribute('stroke-width', '2.2'); symbol.setAttribute('stroke-linecap', 'round'); symbol.setAttribute('stroke-linejoin', 'round'); symbol.setAttribute('fill', 'none');
         g.appendChild(symbol);
         const contact = document.createElementNS(NS, 'circle');
@@ -305,9 +309,22 @@ function renderSLD(mainMccbRating, totalCurrent) {
         label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#cbd5e1');
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
-            line(cx, bus + (three ? 24 : 12), cx, bus + 43, c.sup === 3 ? '#64748b' : (colors[c.phase] || colors.R), 2);
-            breaker(cx, bus + 56, c.mcb, '?', 'Outgoing final circuit ' + c.id + '\nBoard: ' + board.name + '\nLoads: ' + c.items.map(f => f.name).join(', ') + '\nRooms: ' + c.rooms.join(', ') + '\nLoad: ' + Number(c.watts).toFixed(0) + ' W\nDesign current: ' + current + ' A\nBreaker estimate: ' + (c.mcb == null ? 'NOT SIZED' : c.mcb + ' A') + '\nPhase: ' + c.phase, '#2563eb', 'MCB');
-            line(cx, bus + 69, cx, bus + 82, '#64748b', 1.5);
+            const phaseName = c.sup === 3 ? 'R/Y/B' : (['R','Y','B'].includes(c.phase) ? c.phase : (board.e || 'R'));
+            if (three && c.sup === 3) {
+                [['R',bus],['Y',bus+7],['B',bus+14]].forEach(([ph,sy],idx) => line(cx+(idx-1)*6,sy,cx+(idx-1)*6,bus+42,colors[ph],2.2,false,'Phase '+ph+' conductor from matching busbar to '+c.id));
+                line(cx-6,bus+42,cx+6,bus+42,'#e2e8f0',1.4,false,'Three-phase circuit take-off');
+            } else {
+                const phaseY = three ? bus + ({R:0,Y:7,B:14}[phaseName]) : bus;
+                line(cx,phaseY,cx,bus+42,colors[phaseName] || colors.R,2.4,false,'Phase '+phaseName+' conductor physically tapped from matching busbar to '+c.id);
+            }
+            const neutralY = three ? bus+21 : bus+9, peY = three ? bus+29 : bus+17;
+            line(cx+15,neutralY,cx+15,bus+82,colors.N,1.5,true,'Neutral (N) conductor from neutral busbar to '+c.id);
+            line(cx+22,peY,cx+22,bus+82,colors.PE,2,false,'Protective earth (PE) conductor from PE bar to '+c.id);
+            line(cx+22,peY,cx+22,bus+82,'#facc15',1,true,'Protective earth green/yellow identification');
+            const cable = c.wire ? c.wire.size : 'NOT SIZED';
+            const vd = Number.isFinite(c.vDropPct) ? c.vDropPct.toFixed(2)+'%' : 'not calculated';
+            breaker(cx, bus + 56, c.mcb, c.sup === 3 ? 3 : 1, 'Outgoing final circuit ' + c.id + '\nBoard: ' + board.name + '\nLoads: ' + c.items.map(f => f.name).join(', ') + '\nRooms: ' + c.rooms.join(', ') + '\nLoad: ' + Number(c.watts).toFixed(0) + ' W\nDesign current: ' + current + ' A\nBreaker estimate: ' + (c.mcb == null ? 'NOT SIZED' : c.mcb + ' A') + '\nPhase: ' + phaseName + '\nCable: ' + cable + '\nInstallation reference: ' + (engineering.installationMethod || 'not set') + '\nVoltage-drop estimate: ' + vd + '\nN and PE shown as separate conductors.', '#60a5fa', 'MCB');
+            line(cx, bus + 69, cx, bus + 82, '#cbd5e1', 1.5);
             label(c.id, cx, bus + 98, 12, '#e2e8f0', 'middle', '700');
             label(Number(c.watts).toFixed(0) + ' W', cx, bus + 113, 10, '#94a3b8');
         });
