@@ -156,32 +156,57 @@ function renderSLD(mainMccbRating, totalCurrent) {
     }
     const group = document.createElementNS(NS, 'g');
     svg.appendChild(group);
-    const colors = { R: '#dc2626', Y: '#d69e00', B: '#2563eb', N: '#94a3b8' };
+    const colors = { R: '#ef4444', Y: '#fbbf24', B: '#60a5fa', N: '#cbd5e1', PE: '#22c55e' };
+    // One delegated tooltip controller prevents nested SVG elements from opening
+    // multiple competing cards or hiding the card while crossing child geometry.
     const appendTitle = (el, value) => {
-        const title = document.createElementNS(NS, 'title');
-        title.textContent = value;
-        el.appendChild(title);
         el.dataset.tip = value;
+        el.setAttribute('aria-label', value.replaceAll('\n', ' · '));
         el.classList.add('sld-node');
         el.style.pointerEvents = 'all';
-        el.addEventListener('mouseenter', e => {
-            if (!tip) return;
-            tip.textContent = value;
-            tip.style.display = 'block';
-            const bounds = viewport.getBoundingClientRect();
-            tip.style.left = Math.min(e.clientX - bounds.left + 14, bounds.width - 300) + 'px';
-            tip.style.top = Math.max(8, e.clientY - bounds.top + 14) + 'px';
-        });
-        el.addEventListener('mousemove', e => {
-            if (!tip) return;
-            tip.textContent = value;
-            tip.style.display = 'block';
-            const bounds = viewport.getBoundingClientRect();
-            tip.style.left = Math.min(e.clientX - bounds.left + 14, bounds.width - 300) + 'px';
-            tip.style.top = Math.max(8, e.clientY - bounds.top + 14) + 'px';
-        });
-        el.addEventListener('mouseleave', () => { if (tip) tip.style.display = 'none'; });
     };
+    if (!svg.dataset.tooltipBound) {
+        svg.dataset.tooltipBound = '1';
+        let activeTipNode = null;
+        const moveTip = e => {
+            if (!tip || !activeTipNode) return;
+            const bounds = viewport.getBoundingClientRect();
+            const width = tip.offsetWidth || 290;
+            const height = tip.offsetHeight || 80;
+            const x = Math.max(8, Math.min(e.clientX - bounds.left + 14, bounds.width - width - 8));
+            const y = Math.max(8, Math.min(e.clientY - bounds.top + 14, bounds.height - height - 8));
+            tip.style.left = x + 'px';
+            tip.style.top = y + 'px';
+        };
+        svg.addEventListener('pointerover', e => {
+            const node = e.target.closest?.('[data-tip]');
+            if (!node || !svg.contains(node)) return;
+            activeTipNode = node;
+            tip.textContent = node.dataset.tip;
+            tip.style.display = 'block';
+            moveTip(e);
+        });
+        svg.addEventListener('pointermove', e => {
+            if (!activeTipNode) return;
+            const node = e.target.closest?.('[data-tip]');
+            if (node && svg.contains(node) && node !== activeTipNode) {
+                activeTipNode = node;
+                tip.textContent = node.dataset.tip;
+            }
+            moveTip(e);
+        });
+        svg.addEventListener('pointerout', e => {
+            if (!activeTipNode) return;
+            const next = e.relatedTarget?.closest?.('[data-tip]');
+            if (next && svg.contains(next)) {
+                activeTipNode = next;
+                tip.textContent = next.dataset.tip;
+                return;
+            }
+            activeTipNode = null;
+            tip.style.display = 'none';
+        });
+    }
     const line = (x1, y1, x2, y2, color = '#64748b', widthPx = 2, dash = false, detail = '') => {
         const el = document.createElementNS(NS, 'line');
         Object.entries({ x1, y1, x2, y2, stroke: color, 'stroke-width': widthPx, 'stroke-linecap': 'round' }).forEach(([k, v]) => el.setAttribute(k, v));
@@ -200,18 +225,18 @@ function renderSLD(mainMccbRating, totalCurrent) {
     const card = (x, y, w, h, heading, sub, detail, accent = '#2563eb') => {
         const g = document.createElementNS(NS, 'g');
         const r = document.createElementNS(NS, 'rect');
-        Object.entries({ x, y, width: w, height: h, rx: 10, fill: '#ffffff', stroke: '#cbd5e1', 'stroke-width': 1.5 }).forEach(([k, v]) => r.setAttribute(k, v));
+        Object.entries({ x, y, width: w, height: h, rx: 10, fill: '#0b1b32', stroke: '#355276', 'stroke-width': 1.5 }).forEach(([k, v]) => r.setAttribute(k, v));
         g.appendChild(r);
         const bar = document.createElementNS(NS, 'rect');
         Object.entries({ x: x + 3, y: y + 8, width: 4, height: h - 16, rx: 2, fill: accent }).forEach(([k, v]) => bar.setAttribute(k, v));
         g.appendChild(bar);
         const head = document.createElementNS(NS, 'text');
-        Object.entries({ x: x + 17, y: y + 20, 'font-size': 12, 'font-weight': 700, fill: '#334155' }).forEach(([k, v]) => head.setAttribute(k, v));
+        Object.entries({ x: x + 17, y: y + 20, 'font-size': 12, 'font-weight': 700, fill: '#f1f5f9' }).forEach(([k, v]) => head.setAttribute(k, v));
         head.textContent = heading; g.appendChild(head);
         const second = document.createElementNS(NS, 'text');
-        Object.entries({ x: x + 17, y: y + 40, 'font-size': 11, fill: '#475569' }).forEach(([k, v]) => second.setAttribute(k, v));
+        Object.entries({ x: x + 17, y: y + 40, 'font-size': 11, fill: '#cbd5e1' }).forEach(([k, v]) => second.setAttribute(k, v));
         second.textContent = sub; g.appendChild(second);
-        appendTitle(head, detail);
+        appendTitle(g, detail);
         group.appendChild(g);
         return g;
     };
@@ -233,8 +258,8 @@ function renderSLD(mainMccbRating, totalCurrent) {
         g.appendChild(hitArea);
         appendTitle(hitArea, detail);
         group.appendChild(g);
-        label(kind, x + 23, y - 1, 10, '#475569', 'start', '700');
-        label((rating == null ? 'N/S' : rating + ' A') + ' · ' + (poles === '?' ? 'poles TBD' : poles + 'P'), x + 23, y + 12, 10, '#475569');
+        label(kind, x + 23, y - 1, 10, '#cbd5e1', 'start', '700');
+        label((rating == null ? 'N/S' : rating + ' A') + ' · ' + (poles === '?' ? 'poles TBD' : poles + 'P'), x + 23, y + 12, 10, '#cbd5e1');
         return g;
     };
 
@@ -268,29 +293,52 @@ function renderSLD(mainMccbRating, totalCurrent) {
             line(left, bus, right, bus, colors.R, 4, false, busDetail + ' · Phase R');
             line(left, bus + 7, right, bus + 7, colors.Y, 4, false, busDetail + ' · Phase Y');
             line(left, bus + 14, right, bus + 14, colors.B, 4, false, busDetail + ' · Phase B');
-            line(left, bus + 21, right, bus + 21, colors.N, 1.5, true, busDetail + ' · Neutral');
+            line(left, bus + 21, right, bus + 21, colors.N, 1.8, true, busDetail + ' · Neutral (N)');
+            line(left, bus + 29, right, bus + 29, colors.PE, 2.2, false, busDetail + ' · Protective earth (PE)');
+            line(left, bus + 29, right, bus + 29, '#facc15', 1, true, 'Protective earth (PE) · green/yellow identification');
         } else {
             line(left, bus, right, bus, colors[board.e] || colors.R, 4, false, busDetail + ' · Line');
-            line(left, bus + 9, right, bus + 9, colors.N, 1.5, true, busDetail + ' · Neutral');
+            line(left, bus + 9, right, bus + 9, colors.N, 1.8, true, busDetail + ' · Neutral (N)');
+            line(left, bus + 17, right, bus + 17, colors.PE, 2.2, false, busDetail + ' · Protective earth (PE)');
+            line(left, bus + 17, right, bus + 17, '#facc15', 1, true, 'Protective earth (PE) · green/yellow identification');
         }
-        label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#475569');
+        label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#cbd5e1');
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
             line(cx, bus + (three ? 24 : 12), cx, bus + 43, c.sup === 3 ? '#64748b' : (colors[c.phase] || colors.R), 2);
             breaker(cx, bus + 56, c.mcb, '?', 'Outgoing final circuit ' + c.id + '\nBoard: ' + board.name + '\nLoads: ' + c.items.map(f => f.name).join(', ') + '\nRooms: ' + c.rooms.join(', ') + '\nLoad: ' + Number(c.watts).toFixed(0) + ' W\nDesign current: ' + current + ' A\nBreaker estimate: ' + (c.mcb == null ? 'NOT SIZED' : c.mcb + ' A') + '\nPhase: ' + c.phase, '#2563eb', 'MCB');
             line(cx, bus + 69, cx, bus + 82, '#64748b', 1.5);
-            label(c.id, cx, bus + 98, 12, '#334155', 'middle', '700');
-            label(Number(c.watts).toFixed(0) + ' W', cx, bus + 113, 10, '#64748b');
+            label(c.id, cx, bus + 98, 12, '#e2e8f0', 'middle', '700');
+            label(Number(c.watts).toFixed(0) + ' W', cx, bus + 113, 10, '#94a3b8');
         });
         kids.forEach(child => {
             const cx = positions.get(child.id).x, childTop = top(child);
-            line(cx, bus + (three ? 24 : 12), cx, bus + 41, '#64748b', 2, false, 'Feeder connection from ' + board.name + ' busbar to ' + child.name);
-            breaker(cx, bus + 54, child.s?.cb, '?',
-                'Outgoing feeder circuit-breaker (provisional)\nFrom: ' + board.name + '\nTo: ' + child.name + '\nDownstream system: ' + (bSup(child) === 3 ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nDevice type, breaking capacity and selectivity require project design verification.',
-                '#d97706', 'FEEDER CB');
-            line(cx, bus + 67, cx, childTop, '#d97706', 2, false, 'Feeder cable from ' + board.name + ' to ' + child.name + ' · cable size and route to be specified');
+            const feederY = bus + (three ? 29 : 17);
+            const isThreePhaseFeeder = bSup(child) === 3;
+            const phasePick = ['R','Y','B'].includes(child.e) ? child.e : 'R';
+            if (three && isThreePhaseFeeder) {
+                // Three distinct phase take-offs touch their matching R/Y/B busbars.
+                [['R', bus], ['Y', bus + 7], ['B', bus + 14]].forEach(([ph, sy], idx) => {
+                    const px = cx + (idx - 1) * 7;
+                    line(px, sy, px, bus + 42, colors[ph], 2.4, false, 'Phase ' + ph + ' feeder conductor from ' + board.name + ' busbar to ' + child.name);
+                });
+                line(cx - 7, bus + 42, cx + 7, bus + 42, '#e2e8f0', 1.5, false, 'Three-phase feeder take-off to 3-pole protective device');
+            } else {
+                const sourceY = three ? bus + ({R:0,Y:7,B:14}[phasePick]) : bus;
+                const sourceColor = three ? colors[phasePick] : (colors[board.e] || colors.R);
+                line(cx, sourceY, cx, bus + 42, sourceColor, 2.6, false, 'Phase ' + phasePick + ' feeder conductor physically tapped from matching busbar');
+            }
+            const nSourceY = three ? bus + 21 : bus + 9;
+            const peSourceY = three ? bus + 29 : bus + 17;
+            line(cx + 17, nSourceY, cx + 17, childTop + 4, colors.N, 1.8, true, 'Neutral (N) feeder conductor from neutral busbar to ' + child.name);
+            line(cx + 25, peSourceY, cx + 25, childTop + 4, colors.PE, 2.2, false, 'Protective earth (PE) conductor from PE bar to ' + child.name);
+            line(cx + 25, peSourceY, cx + 25, childTop + 4, '#facc15', 1, true, 'Protective earth (PE) green/yellow identification');
+            breaker(cx, bus + 54, child.s?.cb, isThreePhaseFeeder ? 3 : 1,
+                'Outgoing feeder circuit-breaker · preliminary estimate\nFrom: ' + board.name + '\nTo: ' + child.name + '\nSource phase: ' + (isThreePhaseFeeder ? 'R/Y/B' : phasePick) + '\nNeutral: separate N conductor\nProtective earth: separate PE conductor\nDownstream system: ' + (isThreePhaseFeeder ? '3-phase' : '1-phase') + '\nDesign current: ' + Number(child.s?.mx || 0).toFixed(2) + ' A\nPreliminary rating: ' + (child.s?.cb == null ? 'NOT SIZED' : child.s.cb + ' A') + '\nCable data, fault level, device breaking capacity and selectivity require project design verification.',
+                '#f59e0b', 'FEEDER CB');
+            line(cx, bus + 67, cx, childTop, '#cbd5e1', 2.2, false, 'Feeder cable route from ' + board.name + ' to ' + child.name + ' · phase conductors shown separately at source');
         });
     }
-    label('Conceptual SLD · feeder topology follows the selected parent board · ratings are preliminary; poles and device class to be confirmed', 16, height - 16, 10, '#b45309');
+    label('CONCEPTUAL SLD · VERIFY CABLE ROUTING, PROTECTION, FAULT LEVEL AND CODE COMPLIANCE BEFORE CONSTRUCTION', 16, height - 16, 10, '#fbbf24');
     sldApplyView();
 }
