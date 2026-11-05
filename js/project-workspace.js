@@ -130,11 +130,11 @@
       ['Load schedule',fixtures.length>0,'Add at least one load'],
       ['Board hierarchy',!validateBoardHierarchy(),'Fix board parent / supply / cycle errors'],
       ['Cable sizing',cableReviewComplete,'Verify ampacity, coordination, voltage drop, per-circuit fault withstand and breaker Icu/Icn'],
-      ['Source fault level & breaker Icu',Number(engineering.sourceFaultKA)>0&&Number(engineering.mainBreakerIcuKA)>0,'Enter verified short-circuit study and breaker datasheet values'],
+      ['MDB fault / Icu comparison',engineering.sourceFaultKA!==''&&engineering.mainBreakerIcuKA!==''&&Number(engineering.sourceFaultKA)>0&&Number(engineering.mainBreakerIcuKA)>0&&Number(engineering.mainBreakerIcuKA)>=Number(engineering.sourceFaultKA),engineering.sourceFaultKA!==''&&engineering.mainBreakerIcuKA!==''&&Number(engineering.sourceFaultKA)>0&&Number(engineering.mainBreakerIcuKA)>0?'FAIL — entered breaker Icu/Icn is below the entered MDB fault level':'Enter verified prospective fault current and manufacturer Icu/Icn values'],
       ['Earthing / ADS',false,'Verify loop impedance, protective device trip time and disconnection requirements externally'],
       ['Protection coordination',false,'Verify manufacturer curves and selectivity tables externally']
     ];
-    box.innerHTML=checks.map(([label,ok,hint])=>'<div class="flex items-start gap-2 rounded-lg border '+(ok?'border-emerald-800 bg-emerald-950/20':'border-slate-800 bg-slate-950/60')+' p-2"><span class="'+(ok?'text-emerald-400':'text-amber-300')+'">'+(ok?'✓':'!')+'</span><span><strong class="text-slate-200">'+label+'</strong><small class="block text-slate-500">'+(ok?'Recorded / passed in app':hint)+'</small></span></div>').join('');
+    box.innerHTML=checks.map(([label,ok,hint])=>'<div class="flex items-start gap-2 rounded-lg border '+(ok?'border-emerald-800 bg-emerald-950/20':'border-slate-800 bg-slate-950/60')+' p-2"><span class="'+(ok?'text-emerald-400':'text-amber-300')+'">'+(ok?'✓':'!')+'</span><span><strong class="text-slate-200">'+label+'</strong><small class="block text-slate-500">'+(ok?'Input / screening check passed in app — not an engineering approval':hint)+'</small></span></div>').join('');
   }
   function hookRecalculation() {
     if(typeof window.recalculateAll!=='function'||window.recalculateAll.__workspaceWrapped)return;
