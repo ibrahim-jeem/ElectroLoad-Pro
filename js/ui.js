@@ -93,6 +93,12 @@ function renderFixtureTable() {
                 <input type="number" step="0.01" min="0.5" max="1.0" value="${item.pf}" onchange="updateFixture(${item.id}, 'pf', parseFloat(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
             </td>
             <td class="py-2 px-2">
+                <input type="number" step="0.05" min="0.1" max="3" value="${item.currentFactor ?? defaultCurrentFactor(item)}" title="Residential guideline uses 1.65 for fans, fluorescent lamps and small inductive loads up to 1 kW. Editable engineer input." onchange="updateFixture(${item.id}, 'currentFactor', parseFloat(this.value))" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
+            </td>
+            <td class="py-2 px-2">
+                <input type="number" step="0.05" min="0" max="1" value="${item.demandFactor ?? 1}" title="Engineer-entered demand factor; default 1.00 until a documented diversity study is applied." onchange="updateFixture(${item.id}, 'demandFactor', parseFloat(this.value))" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
+            </td>
+            <td class="py-2 px-2">
                 <input type="number" min="1" value="${item.distance}" onchange="updateFixture(${item.id}, 'distance', parseFloat(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
             </td>
             <td class="py-2 px-2">
@@ -124,7 +130,7 @@ function renderFixtureTable() {
 function addNewFixtureRow() {
     const newId = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.id)) + 1 : 1;
     const board = boards[0].id;
-    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, distance: 15, phase: 'R' });
+    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, currentFactor:1, demandFactor:1, distance: 15, phase: 'R' });
     renderFixtureTable();
     recalculateAll();
 }
@@ -169,7 +175,7 @@ function addPresetItem(name, category, watts, pf, sup = 1) {
     const phases = ['R', 'Y', 'B'];
     const assignedPhase = phases[fixtures.length % 3];
 
-    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, distance: 20, phase: assignedPhase });
+    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, currentFactor:defaultCurrentFactor({name,category,watts}), demandFactor:1, distance: 20, phase: assignedPhase });
     closePresetModal();
     renderFixtureTable();
     recalculateAll();
