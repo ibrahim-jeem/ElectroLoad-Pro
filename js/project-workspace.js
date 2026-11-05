@@ -71,7 +71,8 @@
       [['projectName',m.name],['projectClient',m.client],['projectLocation',m.location],['projectDesigner',m.designer],['projectDrawingNo',m.drawingNo],['projectRevision',m.revision]].forEach(([id,v])=>{if($(id))$(id).value=v||'';});
       const set=(id,v)=>{if($(id)&&v!==undefined)$(id).value=String(v);};
       set('projectTypeSelect',config.projectType);set('standardSelect',config.standard);set('systemPhaseSelect',config.phase);set('freqSelect',config.frequency);set('wireUnitSelect',config.wireUnit);set('safetyFactorSelect',config.safetyFactor);
-      renderFixtureTable();renderBoardTable();updateConfig();updateGrouping();
+      set('sldConvention',engineering.sldConvention||'IEC');set('sourceFaultKA',engineering.sourceFaultKA??'');set('mainBreakerIcuKA',engineering.mainBreakerIcuKA??'');
+      renderFixtureTable();renderBoardTable();updateConfig();updateGrouping();if(typeof updateEngineering==='function')updateEngineering();
       if(typeof initCableSizingUI==='function')initCableSizingUI();
       saveProject();refreshProjectPicker();setStatus('Project loaded · '+(m.name||'Untitled'));
     } catch(e) { config=old.config;engineering=old.engineering;grouping=old.grouping;fixtures=old.fixtures;boards=old.boards;throw e; }
@@ -166,7 +167,7 @@
   function init() {
     baseSaveProject=window.saveProject;
     if(baseSaveProject){
-      window.saveProject=function(){const ok=baseSaveProject.apply(this,arguments);if(ok){const m=projectMeta();const items=readProjects();const i=items.findIndex(p=>p.meta?.id===activeProjectId);if(i>=0){items[i]=currentSnapshot();writeProjects(items);}}return ok;};
+      window.saveProject=function(){const ok=baseSaveProject.apply(this,arguments);if(ok){const m=projectMeta();const items=readProjects();const i=items.findIndex(p=>p.meta?.id===activeProjectId);if(i>=0){items[i]=currentSnapshot();writeProjects(items);}else if(m.name&&m.name!=='Untitled Project'){items.unshift(currentSnapshot());writeProjects(items);refreshProjectPicker();}}return ok;};
     }
     buildAdvancedPanel();
     hookRecalculation();
