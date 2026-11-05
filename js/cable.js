@@ -135,7 +135,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
   summary.innerHTML=tile('Circuits analysed',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
   body.innerHTML=rows.map(({c,key,fault,result})=>{
     const label=escapeHTML(boardOf(c.board).name+' · '+c.id);
-    if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="8" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
+    if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="7" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
     const cable=result.cable;
     const thermal=result.thermal.status;
     return '<tr><td class="p-2 text-slate-200">'+label+'<small class="block text-slate-500">'+c.distance+' m · '+(c.sup===3?'3-phase':'1-phase')+'</small></td>'+
