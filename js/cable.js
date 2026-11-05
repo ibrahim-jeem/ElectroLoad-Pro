@@ -90,7 +90,7 @@ function initCableSizingUI(){
   const values={cableMaxVdrop:engineering.cableMaxVdrop??2.5,cableInsulation:engineering.cableInsulation||'PVC',cableTripTime:engineering.cableTripTime??0.4,
     cableMethod:engineering.cableMethod||'B2',
     cableAmbientFactor:engineering.cableAmbientFactor??1,cableGroupingFactor:engineering.cableGroupingFactor??1,
-    cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??0.9,cableMaterial:engineering.cableMaterial||'Cu',
+    cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??'',cableMaterial:engineering.cableMaterial||'Cu',
     cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
   ids.forEach(id=>{const el=document.getElementById(id);if(el){el.value=values[id];el.addEventListener('change',()=>{engineering[id.replace(/^cable/,'cable')]=el.value;persistCableSettings();});}});
   const tableMode=document.getElementById('cableTableMode'); if(tableMode)tableMode.textContent=config.wireUnit==='Metric'?'Metric copper · mm² · 2 loaded PVC':'AWG profile unavailable';
@@ -102,7 +102,7 @@ function persistCableSettings(){
   engineering.cableTripTime=n(read('cableTripTime')); engineering.cableMethod=read('cableMethod');
  engineering.cableAmbientFactor=n(read('cableAmbientFactor'));
   engineering.cableGroupingFactor=n(read('cableGroupingFactor')); engineering.cableTemp=n(read('cableTemp'));
-  engineering.cablePowerFactor=n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
+  engineering.cablePowerFactor=read('cablePowerFactor')===''?null:n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
   engineering.cableReactance=n(read('cableReactance')); engineering.cableFaultLevel=read('cableFaultLevel');
   engineering.cableBreakingCapacity=read('cableBreakingCapacity');
   if(typeof recalculateAll==='function')recalculateAll(); else renderCableSizing(); if(typeof saveProject==='function')saveProject();
@@ -114,7 +114,7 @@ function renderCableSizing(){
     tripTime:n(cableInputValue('cableTripTime',0.4)),installationMethod:cableInputValue('cableMethod','B2'),
 ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     groupingFactor:n(cableInputValue('cableGroupingFactor',1)),conductorTempC:n(cableInputValue('cableTemp',70)),
-    powerFactor:n(cableInputValue('cablePowerFactor',0.9)),material:cableInputValue('cableMaterial','Cu'),
+    powerFactor:cableInputValue('cablePowerFactor','')===''?null:n(cableInputValue('cablePowerFactor','')),material:cableInputValue('cableMaterial','Cu'),
     reactanceOhmKm:n(cableInputValue('cableReactance',0.08)),faultCurrentAtPointKA:cableInputValue('cableFaultLevel',''),
     breakingCapacityKA:cableInputValue('cableBreakingCapacity','')};
   if(!circuits.length){body.innerHTML='<tr><td colspan="10" class="p-4 text-slate-500">No circuits available.</td></tr>';summary.innerHTML='';notes.textContent='Add loads to begin cable verification.';return;}
@@ -122,7 +122,8 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const phases=Number(c.sup)===3?3:1;
     const faultInputs=engineering.cableFaultInputs||(engineering.cableFaultInputs={});
     const key=c.board+'|'+c.id, fault=Object.prototype.hasOwnProperty.call(faultInputs,key)?faultInputs[key]:'';
-    const result=calculateCableChecks({...settings,wireUnit:config.wireUnit,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
+    const circuitPf=c.items.reduce((sum,item)=>sum+Number(item.qty)*Number(item.watts),0)/Math.max(c.items.reduce((sum,item)=>sum+Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
+    const result=calculateCableChecks({...settings,wireUnit:config.wireUnit,powerFactor:settings.powerFactor||circuitPf,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
       voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,
       localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
       minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(c.mcb>=20?6:c.mcb>=15?4:c.mcb>=10?2.5:1.5):0,
