@@ -170,13 +170,13 @@ function recalculateAll() {
     const badge = document.getElementById('imbalanceBadge');
     if (pctUnbalance <= 5.0) {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
-        badge.innerText = "BALANCED";
+        badge.innerText = "LOW";
     } else if (pctUnbalance <= 12.0) {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400";
         badge.innerText = "MODERATE";
     } else {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400";
-        badge.innerText = "HIGH UNBALANCE";
+        badge.innerText = "HIGH";
     }
 
     // Update Busbar Visuals
