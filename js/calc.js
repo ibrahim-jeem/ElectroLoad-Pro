@@ -162,6 +162,9 @@ function recalculateAll() {
     renderBoardTable();
     renderEngineeringStatus(mainMccb);
 
+    // Keep the cable verification module synchronized with calculated circuits.
+    if (typeof renderCableSizing === 'function') renderCableSizing();
+
     // Re-render Dynamic Single-Line Diagram
     renderSLD(mainMccb, totalMainAmps);
     if (typeof saveProject === 'function') saveProject();
