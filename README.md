@@ -18,14 +18,13 @@ Font Awesome, Google Fonts and SheetJS (Excel export) are loaded from external C
 
 ## Main workflow
 
-1. **Project Design Basis** — choose Residential, Commercial or Industrial. This is project context; it does not apply undocumented category-wide demand factors.
-2. **Project Workspace** — enter project/client/site/drawing metadata, create and save named projects in this browser, reopen them, or import/export portable `.elpro.json` files.
-3. **System Parameters** — set adopted reference standard, supply phase/voltage, frequency and conductor unit.
-4. **Load Schedule** — add fixtures or presets, edit quantities, watts, PF, distance, board, phase, current multiplier and demand factor.
-5. **Live Phase Monitor** — review R/Y/B loading and run auto-balancing.
-6. **Calculated Circuit Schedule** — review preliminary circuit current, breaker, cable, PE and voltage-drop screening.
-7. **Distribution Board Schedule** — review board-wise outgoing circuits and feeder summaries; export the DB schedule and project metadata to Excel.
-8. **Single-Line Diagram** — inspect the navy drafting canvas, pan/zoom, use the delegated hover details, print A3 or export SVG.
+1. **Project Workspace** — set the Project Design Basis (Residential, Commercial or Industrial), enter project/client/site/drawing metadata, create and save named projects in this browser, reopen them, or import/export portable `.elpro.json` files.
+2. **System Parameters** — set adopted reference standard, supply phase/voltage, frequency and conductor unit.
+3. **Load Schedule** — add fixtures or presets, edit quantities, watts, PF, distance, board, phase, current multiplier and demand factor.
+4. **Live Phase Monitor** — review R/Y/B loading and run auto-balancing.
+5. **Calculated Circuit Schedule** — review preliminary circuit current, breaker, cable, PE and voltage-drop screening.
+6. **Distribution Board Schedule** — review board-wise outgoing circuits and feeder summaries; export the DB schedule and project metadata to Excel.
+7. **Single-Line Diagram** — inspect the navy drafting canvas, pan/zoom, use the delegated hover details, print A3 or export SVG.
 
 ## Advanced Engineering toggle
 
