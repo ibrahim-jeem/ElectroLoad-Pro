@@ -13,8 +13,8 @@ For each circuit and board feeder, V2 follows this order:
    - Single phase: \(\Delta U = 2 I L (R\cos\phi + X\sin\phi)\)
    - Balanced three phase: \(\Delta U = \sqrt{3} I L (R\cos\phi + X\sin\phi)\)
    - \(L\) is one-way cable length in km; \(R\) and \(X\) are in Ω/km. The reactance default is 0.08 Ω/km as a screening assumption; replace it with cable-manufacturer data for the actual construction.
-   - Copper resistance is adjusted from 20°C using \(R_\theta=R_{20}[1+0.00393(\theta-20)]\).
-5. Select a simplified PE size using the IEC 60364-5-54 cross-section relationship, with the Bangladesh residential guideline's 4 mm² ECC minimum applied in the BNBC/Residential profile.
+   - Copper resistance uses IEC 60228 Class 2 maximum DC resistance at 20°C (not ideal copper resistivity), then adjusts using \(R_\theta=R_{20}[1+0.00393(\theta-20)]\). Replace the reference values with actual cable manufacturer data when available.
+5. Select a simplified PE size using the IEC 60364-5-54 cross-section relationship, with the Bangladesh residential guideline's 4 mm² ECC minimum applied in the BNBC/Residential profile. This remains a simplified table method and must be confirmed against the earthing system and fault-disconnection design.
 6. Where a fault current and disconnection time are entered, screen short-circuit thermal withstand with \(S \ge I\sqrt{t}/k\). The enabled Cu/PVC screening coefficient is \(k=115\).
 7. Compare the entered breaker breaking capacity with the entered prospective fault current at the same check point. This is only a simple entered-value comparison, not a downstream short-circuit study.
 
@@ -65,4 +65,5 @@ V2 is a transparent design-assistance and screening engine. It does not certify 
 3. IEC 60364-5-52 Annex B Tables B.52.2 and B.52.4 (PVC copper, two / three loaded conductors), reference methods A1/A2/B1/B2/C. [IEC official Webstore — consolidated edition 3.1 (2009 + AMD1:2024)](https://webstore.iec.ch/en/publication/103734).
 4. Schneider Electric, *Electrical Installation Guide*, [“Recommended simplified approach for cable sizing”](https://www.electrical-installation.org/enwiki/Recommended_simplified_approach_for_cable_sizing) and [“Calculation of voltage drop in steady load conditions”](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions).
 5. IEC 60364-4-43, protection against overcurrent and short-circuit thermal withstand; IEC 60364-5-54, protective conductor sizing.
-6. IEC 60287-1-1:2023, detailed steady-state cable current-rating calculations. V2 does not implement the full IEC 60287 thermal model.
+6. IEC 60228:2023, Tables 3 and 4, maximum conductor DC resistance at 20°C for copper Class 1 / Class 2 conductors. [IEC 60228 overview and table extract](https://www.iteh.asia/catalog/standards/iec/af25f2c8-60f0-437c-a14f-bf3b102bce91/iec-60228-2023).
+7. IEC 60287-1-1:2023, detailed steady-state cable current-rating calculations. V2 does not implement the full IEC 60287 thermal model.
