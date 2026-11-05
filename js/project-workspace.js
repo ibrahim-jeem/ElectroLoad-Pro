@@ -157,7 +157,7 @@
   function buildAdvancedPanel() {
     const advanced=$('advancedPanel');if(!advanced)return;
     ['boardHierarchySection','cableSizingSection','sldEngineeringInputs','sldEngineeringStatus'].forEach(id=>{
-      const el=$(id);if(el && !advanced.contains(el))advanced.querySelector('[data-advanced-content]')?.appendChild(el);
+      const el=$(id);if(el && !advanced.contains(el))advanced.appendChild(el);
     });
     const cable=$('cableSizingSection');
     if(cable){cable.classList.add('workspace-advanced-card');}
