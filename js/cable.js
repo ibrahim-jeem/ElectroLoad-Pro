@@ -4,24 +4,36 @@ function n(value){ return Number(value); }
  * Ampacity data source: Schneider Electric Electrical Installation Guide, Fig. G21,
  * reproducing IEC 60364-5-52 Table C.52.1 simplified unburied conductor reference values.
  */
-// IEC 60364-5-52 / Schneider Electrical Installation Guide simplified unburied copper-PVC
-// columns are transcribed as published; values are A at reference conditions.
-// Only seven 2-loaded-conductor PVC columns are enabled. Flattened source HTML does not preserve the full 3-loaded/XLPE header mapping; those combinations are blocked rather than guessed.
+// IEC 60364-5-52:2009+AMD1:2024, Annex B tables B.52.2 (2 loaded PVC)
+// and B.52.4 (3 loaded PVC), copper, 70°C conductor, reference ambient 30°C in air.
+// Reference methods A1, A2, B1, B2 and C only. D1/D2, E/F/G, XLPE and aluminium
+// are intentionally excluded because their distinct thermal / correction profiles are not enabled.
 const IEC_CABLE_REFERENCE_V2 = {
-  source: 'IEC 60364-5-52 Table C.52.1 (Schneider Electric Electrical Installation Guide, Fig. G21)',
-  sizes: [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240],
+  source: 'IEC 60364-5-52 Tables B.52.2 and B.52.4 (Cu/PVC, 70°C, reference ambient 30°C air)',
+  sizes: [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300],
   methods: {
-    A1: {2:[13,17.5,23,29,39,52,68,null,null,null,null,null,null,null,null],3:null},
-    A2: {2:[13.5,18,24,31,42,56,73,null,null,null,null,null,null,null,null],3:null},
-    B1: {2:[14.5,19.5,26,34,46,61,80,null,null,null,null,null,null,null,null],3:null},
-    B2: {2:[15.5,21,28,36,50,68,89,110,134,171,207,239,null,null,null],3:null},
-    C:  {2:[17,23,31,40,54,73,95,117,141,179,216,249,285,324,380],3:null},
-    E:  {2:[18.5,25,34,43,60,80,101,126,153,196,238,276,318,362,424],3:null},
-    F:  {2:[19.5,27,36,46,63,85,110,137,167,213,258,299,344,392,461],3:null}
+    A1: {
+      2:[14.5,19.5,26,34,46,61,80,99,119,151,182,210,240,273,321,367],
+      3:[13.5,18,24,31,42,56,73,89,108,136,164,188,216,245,286,328]
+    },
+    A2: {
+      2:[14,18.5,25,32,43,57,75,92,110,139,167,192,219,248,291,334],
+      3:[13,17.5,23,29,39,52,68,83,99,125,150,172,196,223,261,298]
+    },
+    B1: {
+      2:[17.5,24,32,41,57,76,101,125,151,192,232,269,300,341,400,458],
+      3:[15.5,21,28,36,50,68,89,110,134,171,207,239,262,296,346,394]
+    },
+    B2: {
+      2:[16.5,23,30,38,52,69,90,111,133,168,201,232,258,294,344,394],
+      3:[15,20,27,34,46,62,80,99,118,149,179,206,225,255,297,339]
+    },
+    C: {
+      2:[19.5,27,36,46,63,85,112,138,168,213,258,299,344,392,461,530],
+      3:[17.5,24,32,41,57,76,96,119,144,184,223,259,299,341,403,464]
+    }
   }
 };
-
-
 function calculateCableChecks(input) {
   const fail = message => ({ valid:false, status:'BLOCKED', message });
   const n = v => Number(v);
@@ -161,6 +173,6 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
   '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Table C.52.1 simplified unburied reference dataset. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
   '<p><b class="text-slate-200">Voltage drop:</b> ΔU = (2 for 1φ, √3 for balanced 3φ) × I × L × (R cosφ + X sinφ); R is adjusted from 20°C using copper α20=0.00393/K. X defaults to 0.08 Ω/km unless manufacturer data is supplied.</p>'+
   '<p><b class="text-slate-200">Short-circuit withstand:</b> S ≥ I√t/k, with k=115 for Cu/PVC and 143 for Cu/XLPE; the selected table currently only enables PVC. Fault-current-at-cable must be entered at each circuit location. Breaking-capacity comparison is only at the entered common fault point.</p>'+
-  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. Only the 2-loaded-conductor PVC columns are enabled; 3-loaded-conductor, XLPE and aluminium selections are blocked rather than guessed. The flattened IEC source header does not preserve all conductor-count/insulation mappings reliably enough for automated use. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
+  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. 2- and 3-loaded-conductor PVC copper are enabled for methods A1/A2/B1/B2/C. Buried D1/D2, free-air E/F/G, XLPE and aluminium remain blocked pending their separate correction-factor and construction profiles. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={calculateCableChecks};
