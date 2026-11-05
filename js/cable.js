@@ -16,7 +16,7 @@ function calculateCableChecks(input) {
     const Iz = Number(cable.ampacity) * correction;
     const coordination = Ib <= In && In <= Iz;
     const multiplier = input.phases === 3 ? Math.sqrt(3) : 2;
-    const vDropV = multiplier * (L / 1000) * Ib * Number(cable.resistance) / (input.phases === 3 ? Number(input.voltageLL || V) : V);
+    const vDropV = multiplier * (L / 1000) * Ib * Number(cable.resistance);
     const vDropPct = (vDropV / (input.phases === 3 ? Number(input.voltageLL || V) : V)) * 100;
     const voltageDropPass = vDropPct <= limit;
     const faultKA = input.faultCurrentKA === '' || input.faultCurrentKA == null ? null : Number(input.faultCurrentKA);
