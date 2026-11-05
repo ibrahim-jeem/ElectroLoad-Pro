@@ -59,6 +59,9 @@ function recalculateAll() {
         // Cable selection now uses the V2 reference-table engine; the legacy generic ampacity table is not used.
         const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
             Math.max(ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
+        const circuitKey = ckt.board + '|' + ckt.id;
+        const circuitFaultKA = (engineering.cableFaultInputs || {})[circuitKey] ?? '';
+        const circuitProtection = (engineering.cableProtectionInputs || {})[circuitKey] || {};
         const cableResult = mcbRating === null ? {valid:false,message:'Protective device is not sized.'} : calculateCableChecks({
             designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance, wireUnit:config.wireUnit,
             voltage:ckt.sup===3?config.voltageLL:config.voltageLN, phases:ckt.sup===3?3:1,
@@ -69,8 +72,8 @@ function recalculateAll() {
             groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
             conductorTempC:Number(engineering.cableTemp ?? 70), powerFactor:Number(engineering.cablePowerFactor||circuitPf),
             reactanceOhmKm:Number(engineering.cableReactance ?? 0.08),
-            faultCurrentKA:(engineering.cableFaultInputs||{})[ckt.board+'|'+ckt.id] ?? '',
-            faultCurrentAtPointKA:engineering.cableFaultLevel, breakingCapacityKA:engineering.cableBreakingCapacity,
+            faultCurrentKA:circuitFaultKA,
+            faultCurrentAtPointKA:circuitFaultKA, breakingCapacityKA:circuitProtection.breakingCapacityKA || '',
             tripTime:Number(engineering.cableTripTime ?? 0.4),
             localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
             minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(mcbRating>=20?6:mcbRating>=15?4:mcbRating>=10?2.5:1.5):0
