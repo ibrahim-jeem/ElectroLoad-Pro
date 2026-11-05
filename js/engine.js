@@ -45,9 +45,18 @@ function eSup(f) {
     const board = boardOf(f.board);
     return (is3PSystem() && Number(f.sup || 1) === 3 && bSup(board) === 3) ? 3 : 1;
 }
+function defaultCurrentFactor(f) {
+    if (config.projectType !== 'Residential') return 1;
+    const name = String(f.name || '').toLowerCase();
+    const fanOrFluorescent = /fan|fluorescent/.test(name);
+    const smallInductive = f.category === 'Motors' && Number(f.watts) <= 1000;
+    return fanOrFluorescent || smallInductive ? 1.65 : 1;
+}
 function itemCurrent(f) {
     const w = Number(f.qty) * Number(f.watts);
-    return eSup(f) === 3 ? w / (Math.sqrt(3) * config.voltageLL * f.pf) : w / (config.voltageLN * f.pf);
+    const currentFactor = Number(f.currentFactor ?? defaultCurrentFactor(f));
+    const base = eSup(f) === 3 ? w / (Math.sqrt(3) * config.voltageLL * f.pf) : w / (config.voltageLN * f.pf);
+    return base * currentFactor;
 }
 function isLowPower(f) { return f.watts <= LOW_POWER_W && f.category !== 'HVAC' && f.category !== 'Motors'; }
 function nextCktName(boardId, skip) {
