@@ -14,7 +14,7 @@ let config = {
     voltageLL: 400,
     frequency: 50,
     wireUnit: 'Metric', // Metric or AWG
-    safetyFactor: 1.25
+    safetyFactor: 1.00
 };
 
 let fixtures = [
