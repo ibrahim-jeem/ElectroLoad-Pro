@@ -377,3 +377,18 @@ test('readiness checklist rejects an MDB breaker below the entered prospective f
   await expect(check).toContainText('FAIL');
   await expect(check).not.toContainText('Input / screening check passed');
 });
+
+
+test('advanced toggle contains circuit grouping and breaker margin controls', async ({ page }) => {
+  await expect(page.locator('#groupingControls')).toBeAttached();
+  await expect(page.locator('#breakerMarginControl')).toBeAttached();
+  await expect(page.locator('#groupingControls')).toBeHidden();
+  await expect(page.locator('#breakerMarginControl')).toBeHidden();
+  await page.locator('#advancedToggle').check();
+  await expect(page.locator('#groupingControls')).toBeVisible();
+  await expect(page.locator('#breakerMarginControl')).toBeVisible();
+});
+
+test('breaker curve is not guessed from load category', async ({ page }) => {
+  await expect(page.locator('#calculatedScheduleBody')).toContainText('ENGINEER REVIEW');
+});
