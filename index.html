@@ -81,13 +81,16 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 text-xs">
                 <label class="text-slate-400">Saved projects<select id="projectPicker" class="workspace-input min-w-56">
-                    <option value="default">Current working project</option></select></label>
+                    <option value="default">Current working project</option></select>
                     <span id="projectManagerStatus" class="text-emerald-300" aria-live="polite">Autosave active in this browser</span>
+                </label>
                 </div>
                 <label class="text-xs text-slate-300 w-full sm:w-56">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
                             <option value="Residential">Residential</option>
                             <option value="Commercial">Commercial</option>
-                            <option value="Industrial">Industrial</option></select></label>
+                            <option value="Industrial">Industrial</option>
+                    </select>
+                </label>
                 <label class="text-slate-400">Project name<input id="projectName" class="workspace-input" placeholder="e.g. Gulshan Residence"></label>
                 <label class="text-slate-400">Client<input id="projectClient" class="workspace-input" placeholder="Client / organization"></label>
                 <label class="text-slate-400">Site location<input id="projectLocation" class="workspace-input" placeholder="Project address"></label>
