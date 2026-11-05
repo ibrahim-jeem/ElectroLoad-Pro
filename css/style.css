@@ -78,9 +78,10 @@ main, header, footer {
     height: 560px;
     overflow: hidden;
     touch-action: none;
-    background-color: #f8fafc;
-    background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
+    background-color: #071426;
+    background-image: radial-gradient(rgba(96, 165, 250, .22) 0.8px, transparent 0.8px);
     background-size: 18px 18px;
+    border-color: #263b58 !important;
 }
  .sld-viewport #sldSvg {
     display: block;
@@ -114,4 +115,24 @@ main, header, footer {
 }
 @media (max-width: 640px) {
     .sld-viewport { height: 440px; }
+}
+
+
+/* SLD drawing palette: dark navy drafting sheet */
+.sld-viewport { background-color:#071426 !important; color:#e2e8f0; }
+.sld-viewport #sldSvg { background:transparent; }
+.sld-viewport [data-sld-toolbar] { position:relative; z-index:3; }
+.sld-tooltip { background:#0b1730; border:1px solid #355276; color:#f8fafc; box-shadow:0 14px 36px rgba(0,0,0,.48); }
+.sld-node { cursor:help; }
+.sld-viewport #sldSvg.sld-panning .sld-node { cursor:grabbing; }
+.sld-section .sld-legend { color:#cbd5e1; }
+@media print {
+  @page { size:A3 landscape; margin:10mm; }
+  body.sld-print-mode { background:#fff !important; color:#111827 !important; }
+  body.sld-print-mode header, body.sld-print-mode footer,
+  body.sld-print-mode main > section:not(.sld-section) { display:none !important; }
+  body.sld-print-mode main { display:block !important; max-width:none !important; padding:0 !important; }
+  body.sld-print-mode .sld-section { display:block !important; border:0 !important; box-shadow:none !important; background:#fff !important; color:#111827 !important; }
+  body.sld-print-mode .sld-viewport { height:250mm !important; background:#071426 !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  body.sld-print-mode [data-sld-toolbar], body.sld-print-mode .sld-no-print { display:none !important; }
 }
