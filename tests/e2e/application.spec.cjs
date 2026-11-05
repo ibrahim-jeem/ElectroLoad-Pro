@@ -163,8 +163,8 @@ test('per-circuit fault current triggers the adiabatic thermal check', async ({ 
   await fault.fill('1');
   await fault.press('Tab');
   const firstRow = page.locator('#cableSizingBody tr').first();
-  await expect(firstRow.locator('td').nth(7)).toContainText('FAIL');
-  await expect(firstRow.locator('td').nth(8)).toContainText('REVIEW / FAIL');
+  await expect(firstRow.locator('td').nth(8)).toContainText('FAIL');
+  await expect(firstRow.locator('td').nth(9)).toContainText('REVIEW / FAIL');
 });
 
 test('cable sizing settings and circuit fault inputs persist after reload', async ({ page }) => {
@@ -304,4 +304,17 @@ test('Excel export contains Project Info and detailed DB Schedule worksheets', a
   expect(names).toContain('DB Schedule');
   expect(names).toContain('Project Info');
   expect(names).toContain('Cable Verification');
+});
+
+
+test('breaker breaking capacity is verified per circuit against that circuit fault level', async ({ page }) => {
+  const fault=page.locator('#cableSizingBody [data-cable-fault]').first();
+  const icu=page.locator('#cableSizingBody [data-cable-icu]').first();
+  await fault.fill('1.5');
+  await fault.press('Tab');
+  await icu.fill('1');
+  await icu.press('Tab');
+  const row=page.locator('#cableSizingBody tr').first();
+  await expect(row.locator('td').nth(8)).toContainText('FAIL — BREAKING CAPACITY');
+  await expect(row.locator('td').nth(9)).toContainText('REVIEW / FAIL');
 });
