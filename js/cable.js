@@ -168,6 +168,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
       '<td class="p-2">'+result.vDropPct.toFixed(2)+'% <small class="block text-slate-500">limit '+settings.maxVdrop+'%</small></td>'+
       '<td class="p-2">'+result.peMm2.toFixed(1)+' mm²</td>'+
       '<td class="p-2"><input aria-label="Fault current '+label+'" data-cable-fault="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(fault)+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
+      '<td class="p-2"><input aria-label="Breaker breaking capacity '+label+'" data-cable-icu="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(protection.breakingCapacityKA||'')+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
       '<td class="p-2">'+escapeHTML(thermal)+'<small class="block text-slate-500">Breaking: '+escapeHTML(result.breakingCheck.status)+'</small></td>'+
       '<td class="p-2 text-amber-300 font-semibold">'+escapeHTML(result.status)+'</td></tr>';
   }).join('');
