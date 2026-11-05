@@ -41,10 +41,25 @@ function exportToExcel() {
         return {
             "Board": b.name, "Area": b.room || '', "Type": b.type, "Fed From": i === 0 ? "Grid" : boardOf(b.par).name,
             "Supply": bSup(b) + "-Phase", "Feed Distance (m)": i === 0 ? "" : b.dist,
-            "Load (kW)": +st.kw.toFixed(2), "Max Current (A)": +st.mx.toFixed(1), "Feeder Breaker": st.cb == null ? 'NOT SIZED' : st.cb + "A"
+            "Load (kW)": +st.kw.toFixed(2), "Max Current (A)": +st.mx.toFixed(1), "Feeder Breaker": st.cb == null ? 'NOT SIZED' : st.cb + "A", "Feeder Cable": st.feederWire ? st.feederWire.size : "NOT SIZED", "Feeder V-Drop Estimate (%)": Number.isFinite(st.feederVdropPct) ? +st.feederVdropPct.toFixed(2) : "NOT CALCULATED", "Installation Reference": engineering.installationMethod, "PE Conductor": st.feederWire ? st.feederWire.pe : "NOT SIZED"
         };
     });
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(boardRows), "Boards");
+    const faultKnown = engineering.sourceFaultKA !== '' && Number(engineering.sourceFaultKA) > 0;
+    const icuKnown = engineering.mainBreakerIcuKA !== '' && Number(engineering.mainBreakerIcuKA) > 0;
+    const engineeringRows = [
+        { Check: "Drawing convention", Input: engineering.sldConvention, Result: "Illustrative symbol convention; not a certified standards library" },
+        { Check: "Installation reference", Input: engineering.installationMethod, Result: "Reference method selected; cable-specific table verification required" },
+        { Check: "Ambient correction factor", Input: engineering.ambientFactor, Result: "User-entered factor applied to generic ampacity table" },
+        { Check: "Grouping correction factor", Input: engineering.groupingFactor, Result: "User-entered factor applied to generic ampacity table" },
+        { Check: "MDB prospective fault current (kA)", Input: faultKnown ? Number(engineering.sourceFaultKA) : "DATA REQUIRED", Result: "Utility / short-circuit study input" },
+        { Check: "Main breaker Icu/Icn (kA)", Input: icuKnown ? Number(engineering.mainBreakerIcuKA) : "DATA REQUIRED", Result: faultKnown && icuKnown ? (Number(engineering.mainBreakerIcuKA) >= Number(engineering.sourceFaultKA) ? "Entered values pass simple MDB comparison" : "FAIL — breaker rating below entered fault level") : "Cannot compare until both values are entered" },
+        { Check: "Downstream fault levels", Input: "DATA REQUIRED", Result: "Not calculated — source and feeder R/X impedances, lengths and fault assumptions required" },
+        { Check: "Protection selectivity", Input: "NOT VERIFIED", Result: "Manufacturer time-current curves / selectivity tables required" },
+        { Check: "Earthing / ADS", Input: "NOT VERIFIED", Result: "Earthing arrangement, loop impedance, disconnection time and protective-device data required" },
+        { Check: "Voltage drop model", Input: "Preliminary", Result: "Resistance-only estimate; reactance, conductor operating temperature and harmonics not fully modelled" }
+    ];
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(engineeringRows), "Engineering Checks");
     XLSX.writeFile(workbook, "Electrical_Load_Schedule.xlsx");
 }
 
