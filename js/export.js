@@ -60,7 +60,7 @@ function exportToExcel() {
             maxVdrop: cableMaxDrop, faultCurrentKA: fault, tripTime: cableTripTime,
             insulation: engineering.cableInsulation || 'PVC',
             installationMethod: engineering.cableMethod || 'B2',
-            loadedConductors: Number(engineering.cableConductors || 2),
+            loadedConductors: phases === 3 ? 3 : 2,
             material: engineering.cableMaterial || 'Cu',
             ambientFactor: Number(engineering.cableAmbientFactor ?? 1),
             groupingFactor: Number(engineering.cableGroupingFactor ?? 1),
@@ -69,7 +69,8 @@ function exportToExcel() {
             reactanceOhmKm: Number(engineering.cableReactance ?? 0.08),
             faultCurrentAtPointKA: engineering.cableFaultLevel,
             breakingCapacityKA: engineering.cableBreakingCapacity,
-            localPeMinimum: config.standard === 'BNBC' ? 4 : 0
+            localPeMinimum: config.standard === 'BNBC' && config.projectType === 'Residential' ? 4 : 0,
+            minimumSizeMm2: config.standard === 'BNBC' && config.projectType === 'Residential' ? (ckt.mcb >= 20 ? 6 : ckt.mcb >= 15 ? 4 : ckt.mcb >= 10 ? 2.5 : 1.5) : 0
         });
         return {
             Board: boardOf(ckt.board).name, Circuit: ckt.id, Supply: phases + '-phase',
