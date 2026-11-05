@@ -23,7 +23,8 @@ function loadProject() {
         if(new Set(saved.boards.map(b=>b.id)).size!==saved.boards.length)throw new Error('Saved project has duplicate board IDs.');
         config={...config,...saved.config};engineering={...engineering,...(saved.engineering||{})};grouping={...grouping,...saved.grouping};
         // Migrate v1 cable controls into the v2-specific settings without discarding user-entered factors.
-        if(!engineering.cableMethod && ['A1','A2','B1','B2','C','E','F'].includes(engineering.installationMethod)) engineering.cableMethod=engineering.installationMethod;
+        if(!engineering.cableMethod && ['A1','A2','B1','B2','C'].includes(engineering.installationMethod)) engineering.cableMethod=engineering.installationMethod;
+        if(!['A1','A2','B1','B2','C'].includes(engineering.cableMethod)) engineering.cableMethod='B2';
         if(engineering.cableAmbientFactor==null && Number.isFinite(Number(engineering.ambientFactor))) engineering.cableAmbientFactor=Number(engineering.ambientFactor);
         if(engineering.cableGroupingFactor==null && Number.isFinite(Number(engineering.groupingFactor))) engineering.cableGroupingFactor=Number(engineering.groupingFactor);
         fixtures=saved.fixtures.map(f=>({...f,room:f.room||'General'}));
