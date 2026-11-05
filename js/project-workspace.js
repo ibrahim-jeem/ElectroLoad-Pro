@@ -119,12 +119,17 @@
   }
   function renderProjectChecks() {
     const box=$('projectReadinessChecks');if(!box)return;
+    const cableReviewComplete=circuits.length>0&&circuits.every(c=>
+      c.cableV2?.valid&&c.cableV2.coordination&&c.cableV2.voltageDropPass&&
+      c.cableV2.thermal?.status?.startsWith('PASS')&&
+      c.cableV2.breakingCheck?.status?.startsWith('PASS')
+    );
     const checks=[
       ['Project name',!!$('projectName')?.value.trim(),'Add a project name'],
       ['Client / location',!!$('projectClient')?.value.trim()&&!!$('projectLocation')?.value.trim(),'Enter client and site location'],
       ['Load schedule',fixtures.length>0,'Add at least one load'],
       ['Board hierarchy',!validateBoardHierarchy(),'Fix board parent / supply / cycle errors'],
-      ['Cable sizing',circuits.length>0&&circuits.every(c=>c.cableV2?.valid),'Resolve unsupported or blocked cable checks'],
+      ['Cable sizing',cableReviewComplete,'Verify ampacity, coordination, voltage drop, per-circuit fault withstand and breaker Icu/Icn'],
       ['Source fault level & breaker Icu',Number(engineering.sourceFaultKA)>0&&Number(engineering.mainBreakerIcuKA)>0,'Enter verified short-circuit study and breaker datasheet values'],
       ['Earthing / ADS',false,'Verify loop impedance, protective device trip time and disconnection requirements externally'],
       ['Protection coordination',false,'Verify manufacturer curves and selectivity tables externally']
