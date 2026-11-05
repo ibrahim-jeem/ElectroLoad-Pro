@@ -277,10 +277,17 @@ test('SLD contains a project drawing title block', async ({ page }) => {
 test('named project reload restores board and project metadata', async ({ page }) => {
   await page.locator('#projectName').fill('Restore QA');
   await page.locator('#projectSaveBtn').click();
-  let first=page.locator('#boardTableBody tr').first();
+  await page.evaluate(()=>{
+    const projects=JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]');
+    const copy=JSON.parse(JSON.stringify(projects.find(p=>p.meta.id==='default')));
+    copy.meta.id='other-copy';copy.meta.name='Other Copy';projects.push(copy);
+    localStorage.setItem('elpro_projects_v1',JSON.stringify(projects));
+  });
+  const first=page.locator('#boardTableBody tr').first();
   const original=await first.locator('input').first().inputValue();
   await first.locator('input').first().fill('Changed After Save');
   await first.locator('input').first().press('Tab');
+  await page.locator('#projectPicker').selectOption('other-copy');
   await page.locator('#projectPicker').selectOption('default');
   await expect(page.locator('#projectName')).toHaveValue('Restore QA');
   await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
