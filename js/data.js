@@ -82,24 +82,6 @@ const AWG_WIRE_TABLE = [
 ];
 
 
-// IEC 60364-5-52 / Schneider Electrical Installation Guide simplified unburied copper-PVC
-// columns are transcribed as published; values are A at reference conditions.
-// 2 loaded conductors: A1,A2,B1,B2,C,E,F; 3 loaded conductors: A1,A2,B1,B2,C,E.
-// F/3-loaded and XLPE combinations are deliberately unavailable in this compact dataset.
-const IEC_CABLE_REFERENCE = {
-  source: 'IEC 60364-5-52 Table C.52.1 (Schneider Electric Electrical Installation Guide, Fig. G21)',
-  sizes: [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240],
-  methods: {
-    A1: {2:[13,17.5,23,29,39,52,68,null,null,null,null,null,null,null,null],3:[22,30,40,51,70,94,119,147,179,229,278,322,371,424,500]},
-    A2: {2:[13.5,18,24,31,42,56,73,null,null,null,null,null,null,null,null],3:[23,31,43,54,75,100,127,158,192,246,298,346,395,450,538]},
-    B1: {2:[14.5,19.5,26,34,46,61,80,null,null,null,null,null,null,null,null],3:[24,33,46,58,80,107,135,169,207,268,328,382,441,506,599]},
-    B2: {2:[15.5,21,28,36,50,68,89,110,134,171,207,239,null,null,null],3:[26,36,49,63,86,115,149,185,225,289,352,410,473,542,641]},
-    C:  {2:[17,23,31,40,54,73,95,117,141,179,216,249,285,324,380],3:[27,36,49,63,86,115,149,185,225,289,352,410,473,542,641]},
-    E:  {2:[18.5,25,34,43,60,80,101,126,153,196,238,276,318,362,424],3:[30,40,54,70,94,127,169,200,242,310,377,437,504,575,679]},
-    F:  {2:[19.5,27,36,46,63,85,110,137,167,213,258,299,344,392,461],3:null}
-  }
-};
-
 const STANDARD_BREAKER_RATINGS = [6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400];
 const ENGINEERING_LIMITATION_NOTICE = 'Preliminary estimate only. Verify cable derating, fault level, breaking capacity, disconnection time, earthing and applicable code before construction.';
 
