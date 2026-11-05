@@ -83,7 +83,7 @@ function recalculateAll() {
         ckt.wire = recommendedWire;
         if (mcbRating === null || !recommendedWire) {
             const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-amber-300">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': CABLE SELECTION BLOCKED — ' + escapeHTML(cableResult.message || 'Unsupported reference-table configuration.') + '</td>';
+            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-amber-300">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': NO VALID BREAKER/CABLE SIZE — CABLE SELECTION BLOCKED — ' + escapeHTML(cableResult.message || 'Unsupported reference-table configuration.') + '</td>';
             calcBody.appendChild(row);
             ckt.vDropPct = null;
             return;
