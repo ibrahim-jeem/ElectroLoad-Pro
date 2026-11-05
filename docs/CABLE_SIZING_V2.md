@@ -26,14 +26,14 @@ For Residential projects, the Bangladesh guideline's 1.65 current factor is appl
 
 ## Ampacity data and limitations
 
-The enabled ampacity dataset transcribes the first seven 2-loaded-conductor PVC copper columns of Schneider Electric's simplified IEC 60364-5-52 Table C.52.1 presentation (A1, A2, B1, B2, C, E and F). The original source presents a complex multi-row header for conductor count and insulation. Its flattened web extraction did not preserve all 3-loaded-conductor / XLPE column relationships reliably enough to encode without risk. Accordingly:
+The enabled ampacity dataset uses IEC 60364-5-52 Annex B Table B.52.2 (PVC, two loaded conductors) and Table B.52.4 (PVC, three loaded conductors), for copper conductors at 70°C and reference ambient 30°C in air. It supports reference methods A1, A2, B1, B2 and C. The reference methods and values are taken from the IEC table structure, not a single universal ampacity list. Accordingly:
 
-- 2 loaded conductors, copper, PVC: enabled for the supported reference methods.
-- 3 loaded conductors: blocked pending verification of the correct 3-loaded-conductor column.
-- XLPE and aluminium: blocked pending a verified compatible table.
+- 2 and 3 loaded conductors, copper, PVC: enabled for methods A1, A2, B1, B2 and C.
+- XLPE and aluminium: blocked pending verified compatible tables and corresponding temperature coefficients.
 - AWG/NEC mode: blocked in this IEC metric engine; a separate NEC ampacity profile is required.
+- Buried D1/D2 and free-air E/F/G methods: blocked pending the separate tables and corresponding soil / installation / grouping correction factors.
 - Ambient and grouping correction factors remain explicit engineer inputs. V2 does not pretend to infer them from incomplete site information.
-- Buried cables, soil thermal resistivity, thermal insulation, solar heating, harmonics, parallel conductors and IEC 60287 detailed thermal calculations are not implemented.
+- Thermal insulation, solar heating, harmonics, parallel conductors and IEC 60287 detailed thermal calculations are not implemented.
 
 A blocked result is intentional: it is safer than presenting an unsupported conductor size as an engineering recommendation.
 
@@ -62,7 +62,7 @@ V2 is a transparent design-assistance and screening engine. It does not certify 
 
 1. Bangladesh Power Division, *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories*, approved by circular dated 15 December 2021. [Official PDF](https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqprylg/b/V2Ministry/o/office-powerdivision/2024/12/21a05b2a89f94341bd7a9f0f68d28604.pdf) Relevant sections include 3.2.2.1–3.2.3, 3.5.2–3.5.4, 3.5.7, and the cable capacity appendix.
 2. Bangladesh National Building Code 2020, published in the Bangladesh Gazette, S.R.O. No. 55-Law/2020. [HBRI official BNBC page](https://hbri.gov.bd/pages/static-pages/6922e02d933eb65569e25da9)
-3. Schneider Electric, *Electrical Installation Guide*, [“Recommended simplified approach for cable sizing”](https://www.electrical-installation.org/enwiki/Recommended_simplified_approach_for_cable_sizing) — IEC 60364-5-52 Table C.52.1 / Fig. G21 and grouping reduction factors.
-4. Schneider Electric, *Electrical Installation Guide*, [“Calculation of voltage drop in steady load conditions”](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions).
+3. IEC 60364-5-52 Annex B Tables B.52.2 and B.52.4 (PVC copper, two / three loaded conductors), reference methods A1/A2/B1/B2/C. [IEC 60364-5-52 consolidated edition preview](https://iso.ieclist.ink/iec/IEC%2060364-5-52-2009%2BAMD1-2024%20CSV%20PDF.pdf).
+4. Schneider Electric, *Electrical Installation Guide*, [“Recommended simplified approach for cable sizing”](https://www.electrical-installation.org/enwiki/Recommended_simplified_approach_for_cable_sizing) and [“Calculation of voltage drop in steady load conditions”](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions).
 5. IEC 60364-4-43, protection against overcurrent and short-circuit thermal withstand; IEC 60364-5-54, protective conductor sizing.
 6. IEC 60287-1-1:2023, detailed steady-state cable current-rating calculations. V2 does not implement the full IEC 60287 thermal model.
