@@ -350,3 +350,30 @@ test('project JSON import restores a validated saved project snapshot', async ({
   await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
   await expect(page.locator('#projectManagerStatus')).toContainText('imported');
 });
+
+
+test('release layout keeps project basis compact and phase meters on one row', async ({ page }) => {
+  const basisWidth = await page.locator('#projectDesignBasis').evaluate(el => el.getBoundingClientRect().width);
+  expect(basisWidth).toBeLessThan(600);
+  const boxes = await Promise.all(['#phaseR_stats','#phaseY_stats','#phaseB_stats'].map(selector =>
+    page.locator(selector).evaluate(el => {
+      const card = el.parentElement.parentElement;
+      const rect = card.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, right: rect.right };
+    })
+  ));
+  expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0);
+  expect(boxes[1].y).toBeCloseTo(boxes[2].y, 0);
+  expect(boxes[0].x).toBeLessThan(boxes[1].x);
+  expect(boxes[1].x).toBeLessThan(boxes[2].x);
+});
+
+test('readiness checklist rejects an MDB breaker below the entered prospective fault level', async ({ page }) => {
+  await page.locator('#sourceFaultKA').fill('25');
+  await page.locator('#sourceFaultKA').press('Tab');
+  await page.locator('#mainBreakerIcuKA').fill('16');
+  await page.locator('#mainBreakerIcuKA').press('Tab');
+  const check = page.locator('#projectReadinessChecks > div').filter({ hasText: 'MDB fault / Icu comparison' });
+  await expect(check).toContainText('FAIL');
+  await expect(check).not.toContainText('Input / screening check passed');
+});
