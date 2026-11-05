@@ -117,7 +117,7 @@
                     </select>
                 </div>
 
-                <div>
+                <div id="breakerMarginControl">
                     <label class="block text-slate-400 font-medium mb-1.5">Additional Breaker Margin</label>
                     <select id="safetyFactorSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="1.25">1.25x (only when required by code / equipment)</option>
@@ -237,7 +237,7 @@
                 </div>
 
                 <!-- Circuit Grouping & Room Strategy -->
-                <div class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+                <div id="groupingControls" class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                             <span class="block font-semibold text-slate-200">Auto Circuit Grouping</span>
@@ -514,7 +514,7 @@
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl no-print"><div class="mb-3"><h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i class="fa-solid fa-clipboard-check text-amber-400 mr-2"></i>Design Review Checklist</h2><p class="text-xs text-slate-400 mt-1">The app flags missing inputs; these items still require qualified engineering verification.</p></div><div id="projectReadinessChecks"></div></section>
 
         <!-- Advanced engineering controls -->
-        <section id="advancedEngineeringSection" class="bg-slate-900 border border-sky-800/50 rounded-2xl p-4 shadow-xl no-print"><label class="flex items-center justify-between gap-4 cursor-pointer"><span><strong class="text-sm text-slate-100 uppercase tracking-wider"><i class="fa-solid fa-gears text-sky-400 mr-2"></i>Advanced Engineering</strong><small class="block text-xs text-slate-400 mt-1">Optional engineering controls: board hierarchy, detailed cable verification, fault inputs and drawing conventions.</small></span><span class="flex items-center gap-2 text-xs text-slate-300"><input id="advancedToggle" type="checkbox" role="switch" aria-controls="advancedPanel" aria-expanded="false" class="w-5 h-5 accent-sky-500"> Advanced tools</span></label><div id="advancedPanel" data-advanced-content class="mt-4 space-y-5" hidden></div></section>
+        <section id="advancedEngineeringSection" class="bg-slate-900 border border-sky-800/50 rounded-2xl p-4 shadow-xl no-print"><label class="flex items-center justify-between gap-4 cursor-pointer"><span><strong class="text-sm text-slate-100 uppercase tracking-wider"><i class="fa-solid fa-gears text-sky-400 mr-2"></i>Advanced Engineering</strong><small class="block text-xs text-slate-400 mt-1">Optional controls: circuit grouping strategy, breaker margin, board hierarchy, detailed cable verification, fault inputs and drawing conventions.</small></span><span class="flex items-center gap-2 text-xs text-slate-300"><input id="advancedToggle" type="checkbox" role="switch" aria-controls="advancedPanel" aria-expanded="false" class="w-5 h-5 accent-sky-500"> Advanced tools</span></label><div id="advancedPanel" data-advanced-content class="mt-4 space-y-5" hidden></div></section>
     </main>
 
     <!-- Footer -->
