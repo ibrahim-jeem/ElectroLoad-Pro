@@ -34,6 +34,13 @@ const IEC_CABLE_REFERENCE_V2 = {
     }
   }
 };
+// IEC 60228 Class 2 stranded copper: maximum DC conductor resistance at 20 °C (Ω/km).
+// Using maximum tabulated resistance avoids optimistic voltage-drop estimates from ideal copper resistivity.
+const IEC_60228_CU_CLASS2_R20 = {
+  1.5:12.1, 2.5:7.41, 4:4.61, 6:3.08, 10:1.83, 16:1.15,
+  25:0.727, 35:0.524, 50:0.387, 70:0.268, 95:0.193, 120:0.153,
+  150:0.124, 185:0.0991, 240:0.0754, 300:0.0601
+};
 function calculateCableChecks(input) {
   const fail = message => ({ valid:false, status:'BLOCKED', message });
   const n = v => Number(v);
@@ -60,9 +67,11 @@ function calculateCableChecks(input) {
   if(!cable) return fail('No cable in the selected reference table can carry the protective-device rating after correction.');
   const Iz=cable.ampacity*correction;
   const coordination=Ib<=In && In<=Iz;
-  // R at conductor operating temperature. R20 = 17.241 (Cu) / S ohm-km;
+  // IEC 60228 Class 2 maximum conductor resistance at 20 °C, corrected to operating temperature.
   // alpha20 = 0.00393/K. X defaults to 0.08 ohm/km when no manufacturer data exists.
-  const S=cable.size, R20=17.241/S, R=R20*(1+0.00393*(temp-20));
+  const S=cable.size, R20=IEC_60228_CU_CLASS2_R20[S];
+  if(!Number.isFinite(R20)) return fail('No IEC 60228 Class 2 resistance reference exists for the selected conductor size.');
+  const R=R20*(1+0.00393*(temp-20));
   const X=n(input.reactanceOhmKm ?? 0.08);
   if(!Number.isFinite(X)||X<0) return fail('Invalid cable reactance.');
   const sinPhi=Math.sqrt(Math.max(0,1-pf*pf));
