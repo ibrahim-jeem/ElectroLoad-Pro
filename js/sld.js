@@ -311,6 +311,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
             line(left, bus + 17, right, bus + 17, '#facc15', 1, true, 'Protective earth (PE) · green/yellow identification');
         }
         label(board.name + ' · ' + (three ? '3Φ' : '1Φ') + ' bus', right + 16, bus + 12, 12, '#cbd5e1');
+        // PE bar termination marker (protective-earth terminal, not a claim about the site electrode).
+        line(left + 8, bus + (three ? 29 : 17), left + 8, bus + (three ? 38 : 26), colors.PE, 1.8, false, board.name + ' protective-earth (PE) terminal');
+        line(left + 2, bus + (three ? 38 : 26), left + 14, bus + (three ? 38 : 26), '#facc15', 1.4, false, 'PE terminal identification');
+        line(left + 4, bus + (three ? 41 : 29), left + 12, bus + (three ? 41 : 29), colors.PE, 1.4, false, 'PE terminal identification');
+        line(left + 6, bus + (three ? 44 : 32), left + 10, bus + (three ? 44 : 32), '#facc15', 1.4, false, 'PE terminal identification');
         own.forEach((c, i) => {
             const cx = taps[i], current = Number(c.current || 0).toFixed(2);
             const phaseName = c.sup === 3 ? 'R/Y/B' : (['R','Y','B'].includes(c.phase) ? c.phase : (board.e || 'R'));
