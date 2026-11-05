@@ -33,6 +33,7 @@ function calculateCableChecks(input) {
       Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Cg<=0 || limit<=0 || pf<=0 || pf>1 ||
       ![1,3].includes(phases) || ![2,3].includes(conductors)) return fail('Invalid or incomplete design inputs.');
   if (input.wireUnit==='AWG') return fail('AWG/NEC ampacity tables are not part of this IEC metric reference profile. Switch the project wire standard to Metric.');
+  if (conductors !== (phases===3?3:2)) return fail('Loaded conductor count must match the circuit phase configuration (2 for single-phase, 3 for three-phase).');
   if (material!=='Cu') return fail('This compact IEC ampacity profile currently supports copper only. Aluminium requires a separately validated dataset.');
   if (insulation!=='PVC') return fail('XLPE ampacity profile is not enabled until its reference-column mapping is independently verified. Select PVC or provide a manufacturer cable schedule.');
   const profile=IEC_CABLE_REFERENCE_V2.methods[method];
