@@ -4,6 +4,8 @@
  */
 
 // Default Project Data State
+let engineering = { sldConvention: 'IEC', installationMethod: 'C', ambientFactor: 1, groupingFactor: 1, sourceFaultKA: '', mainBreakerIcuKA: '' };
+
 let config = {
     standard: 'BNBC',
     phase: '3P',
