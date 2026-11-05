@@ -45,40 +45,50 @@ function exportToExcel() {
         };
     });
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(boardRows), "Boards");
-    const cableMetric = config.wireUnit === 'Metric';
-    const cableTable = cableMetric ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
     const cableFaults = engineering.cableFaultInputs || {};
-    const cableMaxDrop = Number(engineering.cableMaxVdrop ?? 3);
+    const cableMaxDrop = Number(engineering.cableMaxVdrop ?? 2.5);
     const cableTripTime = Number(engineering.cableTripTime ?? 0.4);
     const cableRows = circuits.map(ckt => {
         const key = ckt.board + '|' + ckt.id;
         const fault = Object.prototype.hasOwnProperty.call(cableFaults, key) ? cableFaults[key] : '';
         const phases = Number(ckt.sup) === 3 ? 3 : 1;
+        const pf = ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) > 0
+            ? ckt.watts / ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) : 0.9;
         const result = calculateCableChecks({
-            designCurrent: ckt.current, breakerRating: ckt.mcb,
-            ambientFactor: Number(engineering.ambientFactor || 1), groupingFactor: Number(engineering.groupingFactor || 1),
-            lengthM: ckt.distance, voltage: phases === 3 ? config.voltageLL : config.voltageLN,
-            voltageLL: config.voltageLL, phases, maxVdrop: cableMaxDrop, wireTable: cableTable,
-            faultCurrentKA: fault, tripTime: cableTripTime, insulation: engineering.cableInsulation || 'PVC', metric: cableMetric
+            designCurrent: ckt.current, breakerRating: ckt.mcb, lengthM: ckt.distance,
+            voltage: phases === 3 ? config.voltageLL : config.voltageLN, phases,
+            maxVdrop: cableMaxDrop, faultCurrentKA: fault, tripTime: cableTripTime,
+            insulation: engineering.cableInsulation || 'PVC',
+            installationMethod: engineering.cableMethod || 'B2',
+            loadedConductors: Number(engineering.cableConductors || 2),
+            material: engineering.cableMaterial || 'Cu',
+            ambientFactor: Number(engineering.cableAmbientFactor ?? 1),
+            groupingFactor: Number(engineering.cableGroupingFactor ?? 1),
+            conductorTempC: Number(engineering.cableTemp ?? 70),
+            powerFactor: Number(engineering.cablePowerFactor || pf),
+            reactanceOhmKm: Number(engineering.cableReactance ?? 0.08),
+            faultCurrentAtPointKA: engineering.cableFaultLevel,
+            breakingCapacityKA: engineering.cableBreakingCapacity,
+            localPeMinimum: config.standard === 'BNBC' ? 4 : 0
         });
         return {
             Board: boardOf(ckt.board).name, Circuit: ckt.id, Supply: phases + '-phase',
             'Design Current Ib (A)': Number(ckt.current.toFixed(2)),
             'Breaker Rating In (A)': ckt.mcb == null ? 'NOT SIZED' : ckt.mcb,
-            'Selected Cable': result.cable ? result.cable.size : 'NOT SIZED',
-            'Corrected Ampacity Iz (A)': Number.isFinite(result.Iz) ? Number(result.Iz.toFixed(2)) : 'NOT CALCULATED',
-            'Ambient Factor': Number(engineering.ambientFactor || 1),
-            'Grouping Factor': Number(engineering.groupingFactor || 1),
-            'Voltage Drop (%)': Number.isFinite(result.vDropPct) ? Number(result.vDropPct.toFixed(2)) : 'NOT CALCULATED',
+            'Selected Cable': result.valid ? result.cable.size + ' mm² Cu' : 'BLOCKED',
+            'Reference Ampacity (A)': result.valid ? result.cable.ampacity : result.message,
+            'Corrected Ampacity Iz (A)': result.valid ? Number(result.Iz.toFixed(2)) : 'NOT CALCULATED',
+            'Voltage Drop (%)': result.valid ? Number(result.vDropPct.toFixed(2)) : 'NOT CALCULATED',
             'Voltage Drop Limit (%)': cableMaxDrop,
-            'PE Conductor': result.cable ? result.cable.pe : 'NOT SIZED',
-            'Fault Current at Cable (kA)': fault || 'DATA REQUIRED',
-            'Trip Time (s)': cableTripTime,
-            'Thermal Check': result.thermal ? result.thermal.status : 'NOT CALCULATED',
-            'Coordination Ib ≤ In ≤ Iz': result.coordination ? 'PASS' : 'FAIL / NOT SIZED',
-            'Overall Screening': result.overall || 'BLOCKED',
-            'Installation Method': engineering.installationMethod,
-            'Scope': 'Generic screening only; verify adopted code and manufacturer data'
+            'PE Conductor (mm²)': result.valid ? result.peMm2 : 'NOT CALCULATED',
+            'Fault Current at Circuit (kA)': fault || 'DATA REQUIRED',
+            'Thermal Check': result.valid ? result.thermal.status : 'NOT CALCULATED',
+            'Breaker Breaking Capacity Check': result.valid ? result.breakingCheck.status : 'DATA REQUIRED',
+            'Ib ≤ In ≤ Iz': result.valid ? (result.coordination ? 'PASS' : 'FAIL') : 'BLOCKED',
+            'Overall': result.valid ? result.status : 'BLOCKED — ' + result.message,
+            'Installation Method': engineering.cableMethod || 'B2',
+            'Source': result.valid ? result.source : 'No applicable ampacity reference column',
+            'Scope': 'Engineering screening only; not a compliance certificate'
         };
     });
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(cableRows), "Cable Verification");
