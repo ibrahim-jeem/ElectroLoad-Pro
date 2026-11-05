@@ -8,6 +8,7 @@ let engineering = { sldConvention: 'IEC', installationMethod: 'C', ambientFactor
 
 let config = {
     standard: 'BNBC',
+    projectType: 'Residential',
     phase: '3P',
     voltageLN: 230,
     voltageLL: 400,
