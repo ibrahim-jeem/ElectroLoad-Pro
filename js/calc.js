@@ -59,25 +59,42 @@ function recalculateAll() {
         if ([...ckt.categories].every(c => c === 'Lighting')) curve = 'Type B';
         if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
 
-        // Wire Gauge Selection
-        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);
-        const recommendedWire = mcbRating === null ? null : (wireTable.find(w => w.ampacity * derating >= mcbRating) || null);
+        // Cable selection now uses the V2 reference-table engine; the legacy generic ampacity table is not used.
+        const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
+            Math.max(ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
+        const cableResult = mcbRating === null ? {valid:false,message:'Protective device is not sized.'} : calculateCableChecks({
+            designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance,
+            voltage:ckt.sup===3?config.voltageLL:config.voltageLN, phases:ckt.sup===3?3:1,
+            maxVdrop:Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3)),
+            installationMethod:engineering.cableMethod||'B2', loadedConductors:ckt.sup===3?3:2,
+            material:engineering.cableMaterial||'Cu', insulation:engineering.cableInsulation||'PVC',
+            ambientFactor:Number(engineering.cableAmbientFactor ?? engineering.ambientFactor ?? 1),
+            groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
+            conductorTempC:Number(engineering.cableTemp ?? 70), powerFactor:Number(engineering.cablePowerFactor||circuitPf),
+            reactanceOhmKm:Number(engineering.cableReactance ?? 0.08),
+            faultCurrentKA:(engineering.cableFaultInputs||{})[ckt.board+'|'+ckt.id] ?? '',
+            faultCurrentAtPointKA:engineering.cableFaultLevel, breakingCapacityKA:engineering.cableBreakingCapacity,
+            tripTime:Number(engineering.cableTripTime ?? 0.4),
+            localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
+            minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(mcbRating>=20?6:mcbRating>=15?4:mcbRating>=10?2.5:1.5):0
+        });
+        ckt.cableV2 = cableResult;
+        const recommendedWire = cableResult.valid ? {
+            size:cableResult.cable.size+' mm²', pe:cableResult.peMm2+' mm²',
+            ampacity:cableResult.Iz, resistance:cableResult.R
+        } : null;
         ckt.wire = recommendedWire;
         if (mcbRating === null || !recommendedWire) {
             const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-red-400">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': NO VALID BREAKER/CABLE SIZE IN THE AVAILABLE TABLE. Recommendation blocked.</td>';
+            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-amber-300">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': CABLE SELECTION BLOCKED — ' + escapeHTML(cableResult.message || 'Unsupported reference-table configuration.') + '</td>';
             calcBody.appendChild(row);
             ckt.vDropPct = null;
             return;
         }
 
-        // Voltage Drop Check (longest run in the circuit): %Vd = (2 * L * I * R) / V_LN
-        const resistancePerKm = recommendedWire.resistance;
-        const isTP = ckt.sup === 3;
-        const vDropVolts = (isTP ? Math.sqrt(3) : 2) * (ckt.distance / 1000) * circuitCurrent * resistancePerKm;
-        const vDropPct = (vDropVolts / (isTP ? config.voltageLL : config.voltageLN)) * 100;
-
-        const isVdropWarning = vDropPct > 3.0;
+        const vDropPct = cableResult.vDropPct;
+        const vDropLimit = Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3));
+        const isVdropWarning = !cableResult.voltageDropPass;
         ckt.vDropPct = vDropPct;
 
         // Add to calculated UI schedule table
