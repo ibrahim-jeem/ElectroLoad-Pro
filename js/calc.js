@@ -92,6 +92,9 @@ function recalculateAll() {
         const vDropPct = cableResult.vDropPct;
         const vDropLimit = Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3));
         const isVdropWarning = !cableResult.voltageDropPass;
+        const isEngineeringFail = !cableResult.coordination || isVdropWarning ||
+            cableResult.thermal?.status?.startsWith('FAIL') ||
+            cableResult.breakingCheck?.status?.startsWith('FAIL');
         ckt.vDropPct = vDropPct;
 
         // Add to calculated UI schedule table
@@ -109,8 +112,10 @@ function recalculateAll() {
             <td class="py-2.5 px-3 ${isVdropWarning ? 'text-red-400 font-bold' : 'text-slate-300'}">${vDropPct.toFixed(2)}%</td>
             <td class="py-2.5 px-3 text-center">
                 ${isVdropWarning 
-                    ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] border border-red-500/30">V-DROP &gt; 3%</span>' 
-                    : '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px]">PASS</span>'}
+                    ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] border border-red-500/30">V-DROP &gt; ' + vDropLimit.toFixed(2) + '%</span>' 
+                    : isEngineeringFail
+                        ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] border border-red-500/30">REVIEW / FAIL</span>'
+                        : '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] border border-amber-500/30">INCOMPLETE — REVIEW</span>'}
             </td>
         `;
         calcBody.appendChild(tr);
@@ -140,7 +145,12 @@ function recalculateAll() {
     const maxI = Math.max(...currents);
     const minI = Math.min(...currents);
     const avgI = (phaseAmps.R + phaseAmps.Y + phaseAmps.B) / 3 || 1;
-    const pctUnbalance = (avgI > 0 && is3PSystem()) ? ((maxI - minI) / avgI) * 100 : 0;
+    const maxPhaseDeviation = Math.max(
+        Math.abs(phaseAmps.R - avgI),
+        Math.abs(phaseAmps.Y - avgI),
+        Math.abs(phaseAmps.B - avgI)
+    );
+    const pctUnbalance = (avgI > 0 && is3PSystem()) ? (maxPhaseDeviation / avgI) * 100 : 0;
 
     // Neutral Current Estimate: sqrt(Ir^2 + Iy^2 + Ib^2 - Ir*Iy - Iy*Ib - Ib*Ir)
     const Ir = phaseAmps.R, Iy = phaseAmps.Y, Ib = phaseAmps.B;
