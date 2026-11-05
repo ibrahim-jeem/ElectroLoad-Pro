@@ -60,7 +60,8 @@ function recalculateAll() {
         if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
 
         // Wire Gauge Selection
-        const recommendedWire = mcbRating === null ? null : (wireTable.find(w => w.ampacity >= mcbRating) || null);
+        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);
+        const recommendedWire = mcbRating === null ? null : (wireTable.find(w => w.ampacity * derating >= mcbRating) || null);
         ckt.wire = recommendedWire;
         if (mcbRating === null || !recommendedWire) {
             const row = document.createElement('tr');
@@ -77,6 +78,7 @@ function recalculateAll() {
         const vDropPct = (vDropVolts / (isTP ? config.voltageLL : config.voltageLN)) * 100;
 
         const isVdropWarning = vDropPct > 3.0;
+        ckt.vDropPct = vDropPct;
 
         // Add to calculated UI schedule table
         const tr = document.createElement('tr');
@@ -158,6 +160,7 @@ function recalculateAll() {
     document.getElementById('phaseDeviationVal').innerText = (maxI - minI).toFixed(2) + ' A';
 
     renderBoardTable();
+    renderEngineeringStatus(mainMccb);
 
     // Re-render Dynamic Single-Line Diagram
     renderSLD(mainMccb, totalMainAmps);
@@ -195,4 +198,16 @@ function autoBalancePhases() {
 
     renderFixtureTable();
     recalculateAll();
+}
+
+function renderEngineeringStatus(mainMccb) {
+ const host=document.getElementById('sldEngineeringStatus'); if(!host) return;
+ const source=Number(engineering.sourceFaultKA), icu=Number(engineering.mainBreakerIcuKA);
+ const hasSource=engineering.sourceFaultKA!=='' && Number.isFinite(source) && source>0;
+ const hasIcu=engineering.mainBreakerIcuKA!=='' && Number.isFinite(icu) && icu>0;
+ const faultStatus=hasSource&&hasIcu ? (icu>=source ? '<span class="text-emerald-400 font-semibold">PASS — entered MDB Icu/Icn is not below entered prospective fault current</span>' : '<span class="text-red-400 font-semibold">FAIL — breaker breaking capacity is below entered MDB fault current</span>') : '<span class="text-amber-300 font-semibold">DATA REQUIRED — enter utility / study fault current and breaker Icu/Icn</span>';
+ const derating=Number(engineering.ambientFactor||1)*Number(engineering.groupingFactor||1); const method=escapeHTML(engineering.installationMethod||'Not selected');
+ host.innerHTML='<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Cable ampacity screening</div><div class="text-slate-100 font-semibold">'+method+' · combined correction '+derating.toFixed(3)+'</div><div class="text-slate-500 mt-1">User-entered factors applied to generic reference ampacity. Final selection still needs the correct standard table for cable type, installation, grouping and temperature.</div></div>'+
+ '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">MDB short-circuit breaking capacity</div><div>'+faultStatus+'</div><div class="text-slate-500 mt-1">Entered-value comparison only; downstream fault current is not calculated.</div></div>'+
+ '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Protection coordination / earthing</div><div class="text-amber-300 font-semibold">NOT VERIFIED — manufacturer TCC/selectivity tables and earthing-system data required</div><div class="text-slate-500 mt-1">Voltage drop uses tabulated resistance only; reactance, operating temperature, harmonics and source impedance are not fully modelled.</div></div>';
 }
