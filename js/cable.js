@@ -93,6 +93,7 @@ function initCableSizingUI(){
     cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??0.9,cableMaterial:engineering.cableMaterial||'Cu',
     cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
   ids.forEach(id=>{const el=document.getElementById(id);if(el){el.value=values[id];el.addEventListener('change',()=>{engineering[id.replace(/^cable/,'cable')]=el.value;persistCableSettings();});}});
+  const tableMode=document.getElementById('cableTableMode'); if(tableMode)tableMode.textContent=config.wireUnit==='Metric'?'Metric copper · mm² · 2 loaded PVC':'AWG profile unavailable';
   renderCableSizing();
 }
 function persistCableSettings(){
@@ -131,7 +132,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
   const ready=rows.filter(x=>x.result.valid),pass=ready.filter(x=>x.result.status.startsWith('INCOMPLETE')).length;
   const blocked=rows.length-ready.length;
   const tile=(label,value)=>'<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-[10px] uppercase tracking-wide text-slate-500">'+label+'</div><div class="text-xl font-bold mt-1 text-slate-100">'+value+'</div></div>';
-  summary.innerHTML=tile('Circuits',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
+  summary.innerHTML=tile('Circuits analysed',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
   body.innerHTML=rows.map(({c,key,fault,result})=>{
     const label=escapeHTML(boardOf(c.board).name+' · '+c.id);
     if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="8" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
