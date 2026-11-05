@@ -103,7 +103,7 @@ function persistCableSettings(){
   engineering.cablePowerFactor=n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
   engineering.cableReactance=n(read('cableReactance')); engineering.cableFaultLevel=read('cableFaultLevel');
   engineering.cableBreakingCapacity=read('cableBreakingCapacity');
-  renderCableSizing(); if(typeof saveProject==='function')saveProject();
+  if(typeof recalculateAll==='function')recalculateAll(); else renderCableSizing(); if(typeof saveProject==='function')saveProject();
 }
 function renderCableSizing(){
   const body=document.getElementById('cableSizingBody'),summary=document.getElementById('cableSizingSummary'),notes=document.getElementById('cableSizingNotes');
