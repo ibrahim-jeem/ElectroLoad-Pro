@@ -177,16 +177,21 @@ test('cable sizing settings and circuit fault inputs persist after reload', asyn
   const key = await fault.getAttribute('data-cable-fault');
   await fault.fill('0.25');
   await fault.press('Tab');
+  const icu=page.locator('#cableSizingBody [data-cable-icu]').first();
+  await icu.fill('6');
+  await icu.press('Tab');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
   expect(saved.engineering.cableMaxVdrop).toBe(2.5);
   expect(saved.engineering.cableInsulation).toBe('PVC');
   expect(saved.engineering.cableTripTime).toBe(0.2);
   expect(saved.engineering.cableFaultInputs[key]).toBe('0.25');
+  expect(saved.engineering.cableProtectionInputs[key].breakingCapacityKA).toBe('6');
   await page.reload();
   await expect(page.locator('#cableMaxVdrop')).toHaveValue('2.5');
   await expect(page.locator('#cableInsulation')).toHaveValue('PVC');
   await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
   await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
+  await expect(page.locator('#cableSizingBody [data-cable-icu]').first()).toHaveValue('6');
 });
 
 test('project category and additional distribution board types are available and persist', async ({ page }) => {
