@@ -48,7 +48,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     setValue('groupingFactor',engineering.groupingFactor);
     setValue('sourceFaultKA',engineering.sourceFaultKA);
     setValue('mainBreakerIcuKA',engineering.mainBreakerIcuKA);
-    updateConfig();updateGrouping();renderBoardTable();saveProject();
+    updateConfig();updateGrouping();renderBoardTable();
+    if (typeof initCableSizingUI === 'function') initCableSizingUI();
+    saveProject();
     // Inline handlers update the data before the bubbling event reaches this listener.
     document.addEventListener('change',()=>saveProject());
     document.addEventListener('click',event=>{
