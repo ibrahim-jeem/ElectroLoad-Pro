@@ -60,9 +60,9 @@ V2 is a transparent design-assistance and screening engine. It does not certify 
 
 ## Primary references
 
-1. Bangladesh Power Division, *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories*, approved by circular dated 15 December 2021. Relevant sections include 3.2.2.1–3.2.3, 3.5.2–3.5.4, 3.5.7, and the cable capacity appendix.
-2. Bangladesh National Building Code 2020, published in the Bangladesh Gazette, S.R.O. No. 55-Law/2020.
-3. Schneider Electric, *Electrical Installation Guide*, “Recommended simplified approach for cable sizing” — IEC 60364-5-52 Table C.52.1 / Fig. G21 and grouping reduction factors.
-4. Schneider Electric, *Electrical Installation Guide*, “Calculation of voltage drop in steady load conditions”.
+1. Bangladesh Power Division, *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories*, approved by circular dated 15 December 2021. [Official PDF](https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqprylg/b/V2Ministry/o/office-powerdivision/2024/12/21a05b2a89f94341bd7a9f0f68d28604.pdf) Relevant sections include 3.2.2.1–3.2.3, 3.5.2–3.5.4, 3.5.7, and the cable capacity appendix.
+2. Bangladesh National Building Code 2020, published in the Bangladesh Gazette, S.R.O. No. 55-Law/2020. [HBRI official BNBC page](https://hbri.gov.bd/pages/static-pages/6922e02d933eb65569e25da9)
+3. Schneider Electric, *Electrical Installation Guide*, [“Recommended simplified approach for cable sizing”](https://www.electrical-installation.org/enwiki/Recommended_simplified_approach_for_cable_sizing) — IEC 60364-5-52 Table C.52.1 / Fig. G21 and grouping reduction factors.
+4. Schneider Electric, *Electrical Installation Guide*, [“Calculation of voltage drop in steady load conditions”](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions).
 5. IEC 60364-4-43, protection against overcurrent and short-circuit thermal withstand; IEC 60364-5-54, protective conductor sizing.
 6. IEC 60287-1-1:2023, detailed steady-state cable current-rating calculations. V2 does not implement the full IEC 60287 thermal model.
