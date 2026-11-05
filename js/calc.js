@@ -39,8 +39,8 @@ function recalculateAll() {
 
     // Phase totals come from the board roll-up (3-phase circuits split across R-Y-B)
     const rootS = boards[0].s;
-    phaseKw = { ...rootS.K };
-    phaseAmps = { ...rootS.A };
+    phaseKw = rootS.K ? { ...rootS.K } : { R:rootS.kw||0, Y:0, B:0 };
+    phaseAmps = rootS.A ? { ...rootS.A } : { R:rootS.a1||0, Y:0, B:0 };
 
     circuits.forEach((ckt) => {
         const itemWatts = ckt.watts;
@@ -126,7 +126,7 @@ function recalculateAll() {
     if (config.phase.includes('3P')) {
         totalMainAmps = Math.max(phaseAmps.R, phaseAmps.Y, phaseAmps.B);
     } else {
-        totalMainAmps = totalConnectedWatts / (config.voltageLN * avgPf);
+        totalMainAmps = circuits.reduce((sum,c)=>sum + Number(c.demandCurrent ?? c.current),0);
     }
 
     // Main MCCB Rating
