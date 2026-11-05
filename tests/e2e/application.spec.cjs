@@ -148,3 +148,42 @@ test('engineering inputs persist and MDB Icu is compared with entered fault leve
   expect(saved.engineering.sourceFaultKA).toBe('20');
   expect(saved.engineering.mainBreakerIcuKA).toBe('25');
 });
+
+test('cable sizing engine renders circuit-linked cable verification rows', async ({ page }) => {
+  await expect(page.locator('#cableSizingSection')).toBeVisible();
+  await expect(page.locator('#cableSizingBody tr').first()).toBeVisible();
+  await expect(page.locator('#cableSizingSummary')).toContainText('Circuits analysed');
+  await expect(page.locator('#cableTableMode')).toContainText('Metric copper');
+});
+
+test('per-circuit fault current triggers the adiabatic thermal check', async ({ page }) => {
+  const fault = page.locator('#cableSizingBody [data-cable-fault]').first();
+  await expect(fault).toBeVisible();
+  await fault.fill('1');
+  await fault.press('Tab');
+  const firstRow = page.locator('#cableSizingBody tr').first();
+  await expect(firstRow.locator('td').nth(7)).toContainText('FAIL');
+  await expect(firstRow.locator('td').nth(8)).toContainText('REVIEW / FAIL');
+});
+
+test('cable sizing settings and circuit fault inputs persist after reload', async ({ page }) => {
+  await page.locator('#cableMaxVdrop').fill('2.5');
+  await page.locator('#cableMaxVdrop').press('Tab');
+  await page.locator('#cableInsulation').selectOption('XLPE');
+  await page.locator('#cableTripTime').fill('0.2');
+  await page.locator('#cableTripTime').press('Tab');
+  const fault = page.locator('#cableSizingBody [data-cable-fault]').first();
+  const key = await fault.getAttribute('data-cable-fault');
+  await fault.fill('0.25');
+  await fault.press('Tab');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
+  expect(saved.engineering.cableMaxVdrop).toBe(2.5);
+  expect(saved.engineering.cableInsulation).toBe('XLPE');
+  expect(saved.engineering.cableTripTime).toBe(0.2);
+  expect(saved.engineering.cableFaultInputs[key]).toBe('0.25');
+  await page.reload();
+  await expect(page.locator('#cableMaxVdrop')).toHaveValue('2.5');
+  await expect(page.locator('#cableInsulation')).toHaveValue('XLPE');
+  await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
+  await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
+});
