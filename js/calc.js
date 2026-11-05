@@ -96,7 +96,7 @@ function recalculateAll() {
         const vDropLimit = Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3));
         const isVdropWarning = !cableResult.voltageDropPass;
         const isEngineeringFail = !cableResult.coordination || isVdropWarning ||
-            cableResult.thermal?.status?.startsWith('FAIL') ||
+            cableResult.thermal?.status?.startsWith('FAIL') || cableResult.thermal?.status === 'INVALID INPUT' ||
             cableResult.breakingCheck?.status?.startsWith('FAIL');
         ckt.vDropPct = vDropPct;
 
