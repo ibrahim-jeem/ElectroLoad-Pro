@@ -472,31 +472,12 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-xs no-print" id="sldEngineeringInputs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-xs no-print" id="sldEngineeringInputs">
                 <label class="block text-slate-400">Drawing convention
                     <select id="sldConvention" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
                         <option value="IEC">IEC-inspired symbols</option>
                         <option value="ANSI">ANSI/NEMA-inspired symbols</option>
                     </select>
-                </label>
-                <label class="block text-slate-400">Cable installation method
-                    <select id="installationMethod" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
-                        <option value="A1">A1 · insulated conductors in conduit, thermal wall</option>
-                        <option value="A2">A2 · multicore cable in conduit, thermal wall</option>
-                        <option value="B1">B1 · insulated conductors in conduit</option>
-                        <option value="B2">B2 · multicore cable in conduit</option>
-                        <option value="C" selected>C · clipped direct / wall</option>
-                        <option value="E">E · multicore on perforated tray</option>
-                        <option value="F">F · single-core on tray / free air</option>
-                        <option value="D1">D1 · multicore in underground duct</option>
-                        <option value="D2">D2 · directly buried cable</option>
-                    </select>
-                </label>
-                <label class="block text-slate-400">Ambient / temperature correction factor
-                    <input id="ambientFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
-                </label>
-                <label class="block text-slate-400">Cable grouping correction factor
-                    <input id="groupingFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
                 </label>
                 <label class="block text-slate-400">Prospective fault current at MDB (kA)
                     <input id="sourceFaultKA" type="number" min="0" step="0.1" placeholder="Enter utility / study value" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
