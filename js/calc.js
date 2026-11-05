@@ -26,12 +26,9 @@ function recalculateAll() {
         const itemWatts = item.qty * item.watts;
         totalConnectedWatts += itemWatts;
 
-        // Demand Factor logic
-        let demandFactor = 1.0;
-        if (item.category === 'Lighting') demandFactor = 0.9;
-        else if (item.category === 'Receptacles') demandFactor = 0.7;
-        else if (item.category === 'HVAC') demandFactor = 0.85;
-
+        // Do not invent category-wide diversity factors. Use an explicit per-load factor;
+        // the default is 1.00 until an engineer enters a documented demand/diversity basis.
+        const demandFactor = Number(item.demandFactor ?? 1);
         totalDemandWatts += itemWatts * demandFactor;
     });
 
