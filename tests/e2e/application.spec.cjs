@@ -325,3 +325,22 @@ test('breaker breaking capacity is verified per circuit against that circuit fau
   await expect(row.locator('td').nth(8)).toContainText('FAIL — BREAKING CAPACITY');
   await expect(row.locator('td').nth(9)).toContainText('REVIEW / FAIL');
 });
+
+
+test('project JSON import restores a validated saved project snapshot', async ({ page }) => {
+  await page.locator('#projectName').fill('Import Roundtrip QA');
+  await page.locator('#projectSaveBtn').click();
+  const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]')[0]);
+  const first=page.locator('#boardTableBody tr').first().locator('input').first();
+  const original=await first.inputValue();
+  await first.fill('Mutated Board');
+  await first.press('Tab');
+  await page.locator('#projectImportInput').setInputFiles({
+    name:'import-roundtrip.elpro.json',
+    mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify(snapshot))
+  });
+  await expect(page.locator('#projectName')).toHaveValue('Import Roundtrip QA');
+  await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
+  await expect(page.locator('#projectManagerStatus')).toContainText('imported');
+});
