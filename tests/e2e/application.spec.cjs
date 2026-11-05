@@ -380,6 +380,8 @@ test('readiness checklist rejects an MDB breaker below the entered prospective f
 
 
 test('advanced toggle contains circuit grouping and breaker margin controls', async ({ page }) => {
+  // beforeEach opens advanced tools for the rest of the engineering E2E suite.
+  await page.locator('#advancedToggle').uncheck();
   await expect(page.locator('#groupingControls')).toBeAttached();
   await expect(page.locator('#breakerMarginControl')).toBeAttached();
   await expect(page.locator('#groupingControls')).toBeHidden();
