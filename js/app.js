@@ -1,7 +1,7 @@
 /* ElectroLoad Pro | app.js */
 function saveProject() {
     try {
-        const snapshot={version:2,savedAt:new Date().toISOString(),config,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
+        const snapshot={version:3,savedAt:new Date().toISOString(),config,engineering,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
         localStorage.setItem('elpro_project_v2',JSON.stringify(snapshot));
         localStorage.setItem('elpro_project_v1',JSON.stringify(snapshot));
         const status=document.getElementById('projectSaveStatus');
@@ -19,9 +19,9 @@ function loadProject() {
         const raw=localStorage.getItem('elpro_project_v2')||localStorage.getItem('elpro_project_v1');
         if(!raw)return false;
         const saved=JSON.parse(raw);
-        if(!saved||![1,2].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
+        if(!saved||![1,2,3].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
         if(new Set(saved.boards.map(b=>b.id)).size!==saved.boards.length)throw new Error('Saved project has duplicate board IDs.');
-        config={...config,...saved.config};grouping={...grouping,...saved.grouping};
+        config={...config,...saved.config};engineering={...engineering,...(saved.engineering||{})};grouping={...grouping,...saved.grouping};
         fixtures=saved.fixtures.map(f=>({...f,room:f.room||'General'}));
         boards=saved.boards.map(b=>({...b,room:b.room||'General'}));
         const error=validateBoardHierarchy();
