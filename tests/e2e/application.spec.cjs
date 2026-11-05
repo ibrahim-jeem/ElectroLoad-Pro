@@ -272,3 +272,28 @@ test('SLD contains a project drawing title block', async ({ page }) => {
   await expect(page.locator('#sldSvg [data-sld-title-block]')).toHaveCount(1);
   await expect(page.locator('#sldSvg [data-sld-title-block]')).toContainText('Title Block QA');
 });
+
+
+test('named project reload restores board and project metadata', async ({ page }) => {
+  await page.locator('#projectName').fill('Restore QA');
+  await page.locator('#projectSaveBtn').click();
+  let first=page.locator('#boardTableBody tr').first();
+  const original=await first.locator('input').first().inputValue();
+  await first.locator('input').first().fill('Changed After Save');
+  await first.locator('input').first().press('Tab');
+  await page.locator('#projectPicker').selectOption('default');
+  await expect(page.locator('#projectName')).toHaveValue('Restore QA');
+  await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
+});
+
+test('Excel export contains Project Info and detailed DB Schedule worksheets', async ({ page }) => {
+  const names=await page.evaluate(()=>{
+    window.__exportSheets=null;
+    XLSX.writeFile=(workbook)=>{window.__exportSheets=workbook.SheetNames.slice();};
+    exportToExcel();
+    return window.__exportSheets;
+  });
+  expect(names).toContain('DB Schedule');
+  expect(names).toContain('Project Info');
+  expect(names).toContain('Cable Verification');
+});
