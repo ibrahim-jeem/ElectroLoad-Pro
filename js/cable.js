@@ -176,7 +176,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const value=el.value.trim(); if(value&&(!Number.isFinite(Number(value))||Number(value)<=0)){el.setCustomValidity('Enter a positive fault current in kA.');el.reportValidity();return;}
     el.setCustomValidity(''); engineering.cableFaultInputs=engineering.cableFaultInputs||{};
     if(value)engineering.cableFaultInputs[el.dataset.cableFault]=value;else delete engineering.cableFaultInputs[el.dataset.cableFault];
-    renderCableSizing();if(typeof saveProject==='function')saveProject();
+    if(typeof recalculateAll==='function')recalculateAll();else renderCableSizing();if(typeof saveProject==='function')saveProject();
   }));
   body.querySelectorAll('[data-cable-icu]').forEach(el=>el.addEventListener('change',()=>{
     const value=el.value.trim(); if(value&&(!Number.isFinite(Number(value))||Number(value)<=0)){el.setCustomValidity('Enter a positive breaker breaking capacity in kA.');el.reportValidity();return;}
@@ -184,7 +184,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const current=engineering.cableProtectionInputs[el.dataset.cableIcu]||{};
     if(value)current.breakingCapacityKA=value;else delete current.breakingCapacityKA;
     if(Object.keys(current).length)engineering.cableProtectionInputs[el.dataset.cableIcu]=current;else delete engineering.cableProtectionInputs[el.dataset.cableIcu];
-    renderCableSizing();if(typeof saveProject==='function')saveProject();
+    if(typeof recalculateAll==='function')recalculateAll();else renderCableSizing();if(typeof saveProject==='function')saveProject();
   }));
   notes.innerHTML='<p><b class="text-slate-200">Bangladesh residential minimums:</b> the Power Division guideline gives 1.5 mm² for 5 A, 2.5 mm² for 10 A, 4 mm² for 15 A and 6 mm² for 20 A protected circuits. The application applies the nearest lower threshold conservatively to larger standard breaker ratings (for example, 16 A maps to the 15 A minimum); review this policy against the actual adopted requirements.</p>' +
   '<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
