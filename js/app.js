@@ -1,7 +1,7 @@
 /* ElectroLoad Pro | app.js */
 function saveProject() {
     try {
-        const snapshot={version:3,savedAt:new Date().toISOString(),config,engineering,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
+        const snapshot={version:4,savedAt:new Date().toISOString(),config,engineering,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
         localStorage.setItem('elpro_project_v2',JSON.stringify(snapshot));
         localStorage.setItem('elpro_project_v1',JSON.stringify(snapshot));
         const status=document.getElementById('projectSaveStatus');
@@ -19,7 +19,7 @@ function loadProject() {
         const raw=localStorage.getItem('elpro_project_v2')||localStorage.getItem('elpro_project_v1');
         if(!raw)return false;
         const saved=JSON.parse(raw);
-        if(!saved||![1,2,3].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
+        if(!saved||![1,2,3,4].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
         if(new Set(saved.boards.map(b=>b.id)).size!==saved.boards.length)throw new Error('Saved project has duplicate board IDs.');
         config={...config,...saved.config};engineering={...engineering,...(saved.engineering||{})};grouping={...grouping,...saved.grouping};
         fixtures=saved.fixtures.map(f=>({...f,room:f.room||'General'}));
@@ -37,6 +37,7 @@ function loadProject() {
 window.addEventListener('DOMContentLoaded',()=>{
     loadProject();
     const setValue=(id,value)=>{const el=document.getElementById(id);if(el)el.value=String(value);};
+    setValue('projectTypeSelect',config.projectType||'Residential');
     setValue('standardSelect',config.standard);setValue('systemPhaseSelect',config.phase);
     setValue('freqSelect',config.frequency);setValue('wireUnitSelect',config.wireUnit);setValue('safetyFactorSelect',config.safetyFactor);
     document.getElementById('autoGroupToggle').checked=!!grouping.auto;
@@ -63,6 +64,7 @@ function toggleFormulaModal(){document.getElementById('formulaModal').classList.
 function resetProject(){
     if(confirm('Reset all load entries to default template?')){
         boards=[{id:'b0',name:'MDB',type:'MDB',room:'Main',par:'',sup:3,dist:0}];
+        config.projectType='Residential';
         fixtures=[
             {id:1,name:'Main Office Lighting',room:'Office',board:'b0',sup:1,category:'Lighting',qty:10,watts:18,pf:0.95,distance:15,phase:'R'},
             {id:2,name:'Workstation Sockets',room:'Office',board:'b0',sup:1,category:'Receptacles',qty:6,watts:180,pf:0.90,distance:20,phase:'Y'}
