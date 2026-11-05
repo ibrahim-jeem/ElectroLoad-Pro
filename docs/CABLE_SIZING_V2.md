@@ -5,7 +5,7 @@
 For each circuit and board feeder, V2 follows this order:
 
 1. Determine design current from the circuit's entered watts, power factor, supply voltage and phase configuration. Residential loads covered by the Bangladesh Power Division guideline (fans, fluorescent lamps and small inductive loads up to 1 kW) receive the guideline's 1.65 current multiplier by default. The factor is visible and editable per fixture.
-2. Select the protective-device rating from the existing project breaker-selection logic.
+2. Select the protective-device rating from the existing project breaker-selection logic. The default extra design margin is now 1.00; a 1.25 multiplier is not silently assumed as a universal IEC / BNBC rule. Select a margin only where the applicable code or equipment instruction requires it.
 3. Select the smallest supported conductor whose corrected reference ampacity satisfies the coordination relationship:
    - (I_b \le I_n \le I_z)
    - (I_z = I_t \times C_a \times C_g)
@@ -20,7 +20,7 @@ For each circuit and board feeder, V2 follows this order:
 
 ## Project type and diversity
 
-Residential, Commercial and Industrial are project-context selections, not automatic multipliers. The Power Division guideline says diversity should be considered at circuit / floor / building / complex levels but does not prescribe one universal factor for every load category. V2 therefore removes the former undocumented automatic 0.90 / 0.70 / 0.85 factors. Each fixture now has an explicit, editable demand factor, defaulting to 1.00. The engineer must document the basis of any diversity factor entered.
+Residential, Commercial and Industrial are project-context selections, not automatic multipliers. The Power Division guideline says diversity should be considered at circuit / floor / building / complex levels but does not prescribe one universal factor for every load category. V2 therefore removes the former undocumented automatic 0.90 / 0.70 / 0.85 factors. Each fixture now has an explicit, editable demand factor, defaulting to 1.00. The old category-wide 0.90 / 0.70 / 0.85 values have been removed. The engineer must document the basis of any diversity factor entered.
 
 For Residential projects, the Bangladesh guideline's 1.65 current factor is applied by default to fixture names containing fan or fluorescent and to motor-category loads up to 1 kW. It remains editable per load. Do not apply it blindly to all loads.
 
