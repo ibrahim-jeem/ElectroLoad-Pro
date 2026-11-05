@@ -150,13 +150,13 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
       localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
       minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(c.mcb>=20?6:c.mcb>=15?4:c.mcb>=10?2.5:1.5):0,
       loadedConductors:phases===3?3:2});
-    return {c,key,fault,result};
+    return {c,key,fault,result,protection};
   });
   const ready=rows.filter(x=>x.result.valid),pass=ready.filter(x=>x.result.status.startsWith('INCOMPLETE')).length;
   const blocked=rows.length-ready.length;
   const tile=(label,value)=>'<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-[10px] uppercase tracking-wide text-slate-500">'+label+'</div><div class="text-xl font-bold mt-1 text-slate-100">'+value+'</div></div>';
   summary.innerHTML=tile('Circuits analysed',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
-  body.innerHTML=rows.map(({c,key,fault,result})=>{
+  body.innerHTML=rows.map(({c,key,fault,result,protection})=>{
     const label=escapeHTML(boardOf(c.board).name+' · '+c.id);
     if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="8" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
     const cable=result.cable;
