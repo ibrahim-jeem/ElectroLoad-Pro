@@ -15,7 +15,7 @@ For each circuit and board feeder, V2 follows this order:
    - \(L\) is one-way cable length in km; \(R\) and \(X\) are in Ω/km. The reactance default is 0.08 Ω/km as a screening assumption; replace it with cable-manufacturer data for the actual construction.
    - Copper resistance uses IEC 60228 Class 2 maximum DC resistance at 20°C (not ideal copper resistivity), then adjusts using \(R_\theta=R_{20}[1+0.00393(\theta-20)]\). Replace the reference values with actual cable manufacturer data when available.
 5. Select a simplified PE size using the IEC 60364-5-54 cross-section relationship, with the Bangladesh residential guideline's 4 mm² ECC minimum applied in the BNBC/Residential profile. This remains a simplified table method and must be confirmed against the earthing system and fault-disconnection design.
-6. Where a fault current and disconnection time are entered, screen short-circuit thermal withstand with \(S \ge I\sqrt{t}/k\). The enabled Cu/PVC screening coefficient is \(k=115\).
+6. Where a fault current and disconnection time are entered per circuit, screen short-circuit thermal withstand with \(S \ge I\sqrt{t}/k\). The enabled Cu/PVC screening coefficient is \(k=115\).
 7. Compare the entered breaker breaking capacity with the entered prospective fault current at the same check point. This is only a simple entered-value comparison, not a downstream short-circuit study.
 
 ## Project type and diversity
