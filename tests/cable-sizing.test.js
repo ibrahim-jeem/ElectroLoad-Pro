@@ -10,6 +10,7 @@ const base = {
 const normal=calculateCableChecks(base);
 assert.equal(normal.valid,true);
 assert.equal(normal.cable.size,2.5);
+assert.equal(normal.phaseMm2,normal.neutralMm2);
 const localMinimum=calculateCableChecks({...base,minimumSizeMm2:4});
 assert.equal(localMinimum.cable.size,4);
 assert.equal(calculateCableChecks({...base,loadedConductors:3}).valid,false);
