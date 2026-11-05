@@ -50,7 +50,7 @@ function calculateCableChecks(input) {
   const phases=n(input.phases), method=String(input.installationMethod||'');
   const conductors=n(input.loadedConductors), material=input.material||'Cu', insulation=input.insulation||'PVC';
   if (![Ib,In,L,V,Ca,Cg,limit,pf,temp,phases,conductors].every(Number.isFinite) ||
-      Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Ca>1.5 || Cg<=0 || Cg>1.5 || limit<=0 || pf<=0 || pf>1 || temp<20 || temp>90 ||
+      Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Ca>1.5 || Cg<=0 || Cg>1.5 || limit<=0 || pf<=0 || pf>1 || temp<20 || temp>70 ||
       ![1,3].includes(phases) || ![2,3].includes(conductors)) return fail('Invalid or incomplete design inputs.');
   if (input.wireUnit==='AWG') return fail('AWG/NEC ampacity tables are not part of this IEC metric reference profile. Switch the project wire standard to Metric.');
   if (conductors !== (phases===3?3:2)) return fail('Loaded conductor count must match the circuit phase configuration (2 for single-phase, 3 for three-phase).');
@@ -101,7 +101,7 @@ function calculateCableChecks(input) {
   const breakingCheck=Number.isFinite(faultLevel)&&faultLevel>0&&Number.isFinite(breaking)&&breaking>0
     ? {status:breaking>=faultLevel?'PASS — BREAKING CAPACITY':'FAIL — BREAKING CAPACITY',faultLevel,breaking}
     : {status:'DATA REQUIRED'};
-  const overall=!coordination||!voltageDropPass||thermal.status.startsWith('FAIL')||breakingCheck.status.startsWith('FAIL')
+  const overall=!coordination||!voltageDropPass||(thermal.status.startsWith('FAIL')||thermal.status==='INVALID INPUT')||breakingCheck.status.startsWith('FAIL')
     ? 'REVIEW / FAIL' : 'INCOMPLETE — ENGINEER REVIEW REQUIRED';
   return {valid:true,status:overall,cable,phaseMm2:S,neutralMm2:S,Ib,In,Iz,correction,coordination,R,X,deltaV,vDropPct,voltageDropPass,peMm2,thermal,breakingCheck,
     source:IEC_CABLE_REFERENCE_V2.source,method,conductors,material,insulation};
