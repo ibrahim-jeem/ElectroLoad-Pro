@@ -254,7 +254,7 @@ function renderBoardTable() {
             <td class="py-2 px-2 text-slate-300">${(s.kw || 0).toFixed(2)}</td>
             <td class="py-2 px-2 text-amber-400 font-bold">${cur}</td>
             <td class="py-2 px-2 text-sky-400 font-bold">${s.cb == null ? 'NOT SIZED' : s.cb + 'A'} ${bs === 3 ? '3P' : '1P'} ${isRoot ? 'MCCB' : 'MCB'}</td>
-            <td class="py-2 px-2 text-emerald-400 font-bold">${wire ? wire.size : 'NOT SIZED'}</td>
+            <td class="py-2 px-2 text-emerald-400 font-bold">${isRoot ? '&mdash;' : wire ? wire.size : 'NOT SIZED'}</td>
             <td class="py-2 px-2 ${vdWarn ? 'text-red-400 font-bold' : 'text-slate-300'}">${vd}</td>
             <td class="py-2 px-2 text-right no-print">${isRoot ? '' : `<button onclick="removeBoard('${b.id}')" class="text-slate-500 hover:text-red-400 p-1 transition"><i class="fa-solid fa-trash-can"></i></button>`}</td>
         `;
