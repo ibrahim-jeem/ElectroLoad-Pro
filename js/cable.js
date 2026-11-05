@@ -1,3 +1,4 @@
+function n(value){ return Number(value); }
 /* ElectroLoad Pro | Cable Sizing Engine V2
  * Deterministic IEC-style sizing workflow. Never reports code compliance from incomplete inputs.
  * Ampacity data source: Schneider Electric Electrical Installation Guide, Fig. G21,
