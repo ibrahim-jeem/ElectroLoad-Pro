@@ -10,6 +10,9 @@ const base = {
 const normal=calculateCableChecks(base);
 assert.equal(normal.valid,true);
 assert.equal(normal.cable.size,2.5);
+const localMinimum=calculateCableChecks({...base,minimumSizeMm2:4});
+assert.equal(localMinimum.cable.size,4);
+assert.equal(calculateCableChecks({...base,loadedConductors:3}).valid,false);
 assert.equal(normal.coordination,true);
 assert.ok(Math.abs(normal.vDropPct-1.199) < 0.01);
 assert.equal(normal.voltageDropPass,true);
@@ -36,4 +39,4 @@ const breakingPass=calculateCableChecks({...base,faultCurrentAtPointKA:10,breaki
 assert.equal(breakingPass.breakingCheck.status,'PASS — BREAKING CAPACITY');
 assert.equal(calculateCableChecks({...base,powerFactor:1.2}).valid,false);
 assert.equal(calculateCableChecks({...base,ambientFactor:0}).valid,false);
-console.log('Cable sizing engine v2 tests: 18 assertions passed.');
+console.log('Cable sizing engine v2 tests: 20+ assertions passed.');
