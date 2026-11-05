@@ -213,9 +213,9 @@ function renderBoardTable() {
     boards.forEach((b, idx) => {
         const s = b.s || { kw: 0, mx: 0, cb: 6 };
         const isRoot = idx === 0, bs = bSup(b);
-        const wire = s.cb == null ? null : (wt.find(w => w.ampacity >= s.cb) || null);
+        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);\n        const wire = s.cb == null ? null : (wt.find(w => w.ampacity * derating >= s.cb) || null);
         let vd = '&mdash;', vdWarn = false;
-        if (!isRoot && wire) { const L = b.dist / 1000; const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100; vdWarn = pct > 3.0; vd = pct.toFixed(2) + '%'; }
+        if (!isRoot && wire) { const L = b.dist / 1000; const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100; s.feederWire=wire; s.feederVdropPct=pct; vdWarn = pct > 3.0; vd = pct.toFixed(2) + '%'; } else if (!isRoot) { s.feederWire=null; s.feederVdropPct=null; }
         if (!isRoot && !wire) vd = 'NOT SIZED';
         const cur = bs === 3 && s.A ? `R ${s.A.R.toFixed(1)} &middot; Y ${s.A.Y.toFixed(1)} &middot; B ${s.A.B.toFixed(1)}` : `${(s.mx || 0).toFixed(1)} A (${b.e || 'R'})`;
         const parents = boards.filter(k => k !== b && bSup(k) >= bSup(b) && !isDescendant(k, b));
