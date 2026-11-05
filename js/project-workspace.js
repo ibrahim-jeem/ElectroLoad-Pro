@@ -86,7 +86,7 @@
     const blob=new Blob([JSON.stringify(currentSnapshot(),null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download=(projectMeta().name||'ElectroLoad_Project').replace(/[^a-z0-9-_]+/gi,'_')+'.elpro.json';
-    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     setStatus('Project backup exported.');
   }
   function importProjectJSON(file) {
@@ -167,7 +167,7 @@
   function init() {
     baseSaveProject=window.saveProject;
     if(baseSaveProject){
-      window.saveProject=function(){const ok=baseSaveProject.apply(this,arguments);if(ok){const m=projectMeta();const items=readProjects();const i=items.findIndex(p=>p.meta?.id===activeProjectId);if(i>=0){items[i]=currentSnapshot();writeProjects(items);}else if(m.name&&m.name!=='Untitled Project'){items.unshift(currentSnapshot());writeProjects(items);refreshProjectPicker();}}return ok;};
+      window.saveProject=function(){const ok=baseSaveProject.apply(this,arguments);if(ok){const m=projectMeta();const items=readProjects();const i=items.findIndex(p=>p.meta?.id===activeProjectId);if(i>=0){items[i]=currentSnapshot();writeProjects(items);setStatus('Autosaved locally · '+new Date().toLocaleTimeString());}else if(m.name&&m.name!=='Untitled Project'){items.unshift(currentSnapshot());writeProjects(items);refreshProjectPicker();setStatus('Autosaved locally · '+new Date().toLocaleTimeString());}else{setStatus('Working copy autosaved in this browser');}}return ok;};
     }
     buildAdvancedPanel();
     hookRecalculation();
