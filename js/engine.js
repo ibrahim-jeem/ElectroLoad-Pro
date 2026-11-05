@@ -35,7 +35,7 @@ function validateBoardHierarchy() {
     return null;
 }
 function validateProjectInputs() {
-    const bad = fixtures.find(f => ![+f.qty,+f.watts,+f.pf,+f.distance].every(Number.isFinite) || +f.qty <= 0 || +f.watts <= 0 || +f.pf <= 0 || +f.pf > 1 || +f.distance < 0);
+    const bad = fixtures.find(f => ![+f.qty,+f.watts,+f.pf,+f.distance,+((f.currentFactor ?? defaultCurrentFactor(f))),+((f.demandFactor ?? 1))].every(Number.isFinite) || +f.qty <= 0 || +f.watts <= 0 || +f.pf <= 0 || +f.pf > 1 || +f.distance < 0 || +((f.currentFactor ?? defaultCurrentFactor(f))) <= 0 || +((f.currentFactor ?? defaultCurrentFactor(f))) > 3 || +((f.demandFactor ?? 1)) < 0 || +((f.demandFactor ?? 1)) > 1);
     if (bad) return 'Invalid quantity, watts, power factor or distance in ' + (bad.name || 'a load') + '.';
     if (!Number.isFinite(+config.safetyFactor) || +config.safetyFactor <= 0) return 'Safety factor must be positive.';
     if (!Number.isFinite(+config.voltageLN) || +config.voltageLN <= 0 || !Number.isFinite(+config.voltageLL) || +config.voltageLL <= 0) return 'System voltage must be a valid positive number.';
