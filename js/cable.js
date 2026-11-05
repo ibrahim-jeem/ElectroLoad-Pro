@@ -55,7 +55,7 @@ function calculateCableChecks(input) {
   const sinPhi=Math.sqrt(Math.max(0,1-pf*pf));
   const impedanceTerm=R*pf+X*sinPhi;
   const deltaV=(phases===3?Math.sqrt(3):2)*Ib*impedanceTerm*(L/1000);
-  const vDropPct=deltaV/V;
+  const vDropPct=(deltaV/V)*100;
   const voltageDropPass=vDropPct<=limit;
   // IEC 60364-5-54 simplified PE selection for same material; local 4 mm² ECC floor
   // is applied only to BN residential-guideline profile and is labelled separately.
