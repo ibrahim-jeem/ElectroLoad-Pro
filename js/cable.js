@@ -2,7 +2,7 @@ function n(value){ return Number(value); }
 /* ElectroLoad Pro | Cable Sizing Engine V2
  * Deterministic IEC-style sizing workflow. Never reports code compliance from incomplete inputs.
  * Ampacity data source: Schneider Electric Electrical Installation Guide, Fig. G21,
- * reproducing IEC 60364-5-52 Table C.52.1 simplified unburied conductor reference values.
+ * using IEC 60364-5-52 Annex B Tables B.52.2 and B.52.4 for Cu/PVC, 2 / 3 loaded conductors.
  */
 // IEC 60364-5-52:2009+AMD1:2024, Annex B tables B.52.2 (2 loaded PVC)
 // and B.52.4 (3 loaded PVC), copper, 70°C conductor, reference ambient 30°C in air.
@@ -170,7 +170,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
   }));
   notes.innerHTML='<p><b class="text-slate-200">Bangladesh residential minimums:</b> the Power Division guideline gives 1.5 mm² for 5 A, 2.5 mm² for 10 A, 4 mm² for 15 A and 6 mm² for 20 A protected circuits. The application applies the nearest lower threshold conservatively to larger standard breaker ratings (for example, 16 A maps to the 15 A minimum); review this policy against the actual adopted requirements.</p>' +
   '<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
-  '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Table C.52.1 simplified unburied reference dataset. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
+  '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Annex B Tables B.52.2 and B.52.4, Cu/PVC reference ampacity. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
   '<p><b class="text-slate-200">Voltage drop:</b> ΔU = (2 for 1φ, √3 for balanced 3φ) × I × L × (R cosφ + X sinφ); R is adjusted from 20°C using copper α20=0.00393/K. X defaults to 0.08 Ω/km unless manufacturer data is supplied.</p>'+
   '<p><b class="text-slate-200">Short-circuit withstand:</b> S ≥ I√t/k, with k=115 for Cu/PVC and 143 for Cu/XLPE; the selected table currently only enables PVC. Fault-current-at-cable must be entered at each circuit location. Breaking-capacity comparison is only at the entered common fault point.</p>'+
   '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. 2- and 3-loaded-conductor PVC copper are enabled for methods A1/A2/B1/B2/C. Buried D1/D2, free-air E/F/G, XLPE and aluminium remain blocked pending their separate correction-factor and construction profiles. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
