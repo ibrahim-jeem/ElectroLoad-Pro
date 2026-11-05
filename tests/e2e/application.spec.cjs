@@ -132,9 +132,9 @@ test('SLD uses navy drafting sheet and phase-specific feeder taps with separate 
 });
 
 test('engineering inputs persist and MDB Icu is compared with entered fault level', async ({ page }) => {
-  await page.locator('#ambientFactor').fill('0.85');
-  await page.locator('#ambientFactor').press('Tab');
-  await expect(page.locator('#sldEngineeringStatus')).toContainText('combined correction 0.850');
+  await page.locator('#cableAmbientFactor').fill('0.85');
+  await page.locator('#cableAmbientFactor').press('Tab');
+  await expect(page.locator('#sldEngineeringStatus')).toContainText('Ca × Cg = 0.850');
   await page.locator('#sourceFaultKA').fill('20');
   await page.locator('#sourceFaultKA').press('Tab');
   await page.locator('#mainBreakerIcuKA').fill('10');
@@ -144,7 +144,7 @@ test('engineering inputs persist and MDB Icu is compared with entered fault leve
   await page.locator('#mainBreakerIcuKA').press('Tab');
   await expect(page.locator('#sldEngineeringStatus')).toContainText('PASS — entered MDB Icu/Icn');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
-  expect(saved.engineering.ambientFactor).toBe(0.85);
+  expect(saved.engineering.cableAmbientFactor).toBe(0.85);
   expect(saved.engineering.sourceFaultKA).toBe('20');
   expect(saved.engineering.mainBreakerIcuKA).toBe('25');
 });
