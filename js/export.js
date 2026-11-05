@@ -111,8 +111,8 @@ function exportToExcel() {
             conductorTempC: Number(engineering.cableTemp ?? 70),
             powerFactor: Number(engineering.cablePowerFactor || pf),
             reactanceOhmKm: Number(engineering.cableReactance ?? 0.08),
-            faultCurrentAtPointKA: engineering.cableFaultLevel,
-            breakingCapacityKA: engineering.cableBreakingCapacity,
+            faultCurrentAtPointKA: fault,
+            breakingCapacityKA: (engineering.cableProtectionInputs || {})[ckt.board + '|' + ckt.id]?.breakingCapacityKA || '',
             localPeMinimum: config.standard === 'BNBC' && config.projectType === 'Residential' ? 4 : 0,
             minimumSizeMm2: config.standard === 'BNBC' && config.projectType === 'Residential' ? (ckt.mcb >= 20 ? 6 : ckt.mcb >= 15 ? 4 : ckt.mcb >= 10 ? 2.5 : 1.5) : 0
         });
