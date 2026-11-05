@@ -81,7 +81,7 @@ function calculateCableChecks(input) {
     : {status:'DATA REQUIRED'};
   const overall=!coordination||!voltageDropPass||thermal.status.startsWith('FAIL')||breakingCheck.status.startsWith('FAIL')
     ? 'REVIEW / FAIL' : 'INCOMPLETE — ENGINEER REVIEW REQUIRED';
-  return {valid:true,status:overall,cable,Ib,In,Iz,correction,coordination,R,X,deltaV,vDropPct,voltageDropPass,peMm2,thermal,breakingCheck,
+  return {valid:true,status:overall,cable,phaseMm2:S,neutralMm2:S,Ib,In,Iz,correction,coordination,R,X,deltaV,vDropPct,voltageDropPass,peMm2,thermal,breakingCheck,
     source:IEC_CABLE_REFERENCE_V2.source,method,conductors,material,insulation};
 }
 function cableInputValue(id,fallback){const el=document.getElementById(id);return el?el.value:fallback;}
@@ -141,7 +141,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const thermal=result.thermal.status;
     return '<tr><td class="p-2 text-slate-200">'+label+'<small class="block text-slate-500">'+c.distance+' m · '+(c.sup===3?'3-phase':'1-phase')+'</small></td>'+
       '<td class="p-2">'+result.Ib.toFixed(2)+' / '+result.In.toFixed(0)+'</td>'+
-      '<td class="p-2 text-cyan-300 font-bold">'+cable.size+' mm² Cu</td>'+
+      '<td class="p-2 text-cyan-300 font-bold">'+cable.size+' mm² Cu (L/N)</td>'+
       '<td class="p-2">'+result.cable.ampacity.toFixed(1)+' / '+result.Iz.toFixed(1)+' A</td>'+
       '<td class="p-2">'+result.vDropPct.toFixed(2)+'% <small class="block text-slate-500">limit '+settings.maxVdrop+'%</small></td>'+
       '<td class="p-2">'+result.peMm2.toFixed(1)+' mm²</td>'+
