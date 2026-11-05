@@ -23,6 +23,8 @@ function exportToExcel() {
             "Unit Watts": item.watts,
             "Total Power (W)": itemWatts,
             "Power Factor": item.pf,
+            "Current Multiplier": item.currentFactor ?? defaultCurrentFactor(item),
+            "Demand Factor": item.demandFactor ?? 1,
             "Phase": item.phase,
             "Fixture Current (A)": current.toFixed(2),
             "Circuit Design Current (A)": circuitCurrent.toFixed(2),
@@ -97,6 +99,9 @@ function exportToExcel() {
     const faultKnown = engineering.sourceFaultKA !== '' && Number(engineering.sourceFaultKA) > 0;
     const icuKnown = engineering.mainBreakerIcuKA !== '' && Number(engineering.mainBreakerIcuKA) > 0;
     const engineeringRows = [
+        { Check: "Project category", Input: config.projectType || "Residential", Result: "Occupancy context only; no unsupported category-wide demand multipliers are assumed" },
+        { Check: "Current multiplier basis", Input: "Per-load", Result: "Bangladesh residential guideline: 1.65 for fluorescent lamps, fans and small inductive loads up to 1 kW; editable per load" },
+        { Check: "Demand/diversity factor basis", Input: "Engineer-entered per-load factor", Result: "No universal category-wide diversity percentage is assumed; document the project study / authority basis" },
         { Check: "Drawing convention", Input: engineering.sldConvention, Result: "Illustrative symbol convention; not a certified standards library" },
         { Check: "Installation reference", Input: engineering.installationMethod, Result: "Reference method selected; cable-specific table verification required" },
         { Check: "Ambient correction factor", Input: engineering.ambientFactor, Result: "User-entered factor applied to generic ampacity table" },
