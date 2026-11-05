@@ -70,7 +70,7 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
 });
 
 test('SLD breaker symbols show compact hover details', async ({ page }) => {
-  const feeder = page.locator('#sldSvg rect.sld-node[data-tip]').first();
+  const feeder = page.locator('#sldSvg rect.sld-node[data-tip*="From: MDB"]').first();
   await expect(feeder).toHaveCount(1);
   await feeder.hover();
   await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
