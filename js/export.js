@@ -66,7 +66,7 @@ function exportToExcel() {
         dbScheduleRows.push({
             Board: board.name, Type: 'FEEDER', Way: index===0?'UTILITY':'FROM '+(boards.find(x=>x.id===board.par)?.name||'INVALID'),
             'Load Description': 'Board feeder / incomer',
-            Phase: bSup(board)+'-phase',
+            Phase: (Number(board.sup)===3?'3':'1')+'-phase',
             'Connected Load (W)': Number(st.kw||0)*1000,
             'Design Current Ib (A)': Number(st.mx||0).toFixed(2),
             'Protective Device In (A)': st.cb==null?'NOT SIZED':st.cb,
