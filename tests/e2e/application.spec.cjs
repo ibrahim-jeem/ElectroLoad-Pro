@@ -194,6 +194,7 @@ test('project category and additional distribution board types are available and
   await expect(page.locator('#projectTypeNote')).toContainText('motor starting');
   await page.locator('#projectTypeSelect').selectOption('Commercial');
   await page.reload();
+  await page.locator('#advancedToggle').check();
   await expect(page.locator('#projectTypeSelect')).toHaveValue('Commercial');
   await page.locator('#boardTableBody tr').nth(1).locator('select').first().selectOption({ label: 'FDB' });
   await expect(page.locator('#boardTableBody tr').nth(1).locator('select').first()).toHaveValue('FDB');
