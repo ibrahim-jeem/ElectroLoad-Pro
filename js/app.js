@@ -66,6 +66,7 @@ function resetProject(){
         boards=[{id:'b0',name:'MDB',type:'MDB',room:'Main',par:'',sup:3,dist:0}];
         config.projectType='Residential';
         const projectTypeSelect=document.getElementById('projectTypeSelect'); if(projectTypeSelect)projectTypeSelect.value='Residential';
+        const projectTypeNote=document.getElementById('projectTypeNote'); if(projectTypeNote)projectTypeNote.textContent='Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.';
         fixtures=[
             {id:1,name:'Main Office Lighting',room:'Office',board:'b0',sup:1,category:'Lighting',qty:10,watts:18,pf:0.95,distance:15,phase:'R'},
             {id:2,name:'Workstation Sockets',room:'Office',board:'b0',sup:1,category:'Receptacles',qty:6,watts:180,pf:0.90,distance:20,phase:'Y'}
