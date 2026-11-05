@@ -169,7 +169,7 @@ test('per-circuit fault current triggers the adiabatic thermal check', async ({ 
 test('cable sizing settings and circuit fault inputs persist after reload', async ({ page }) => {
   await page.locator('#cableMaxVdrop').fill('2.5');
   await page.locator('#cableMaxVdrop').press('Tab');
-  await page.locator('#cableInsulation').selectOption('XLPE');
+  await page.locator('#cableInsulation').selectOption('PVC');
   await page.locator('#cableTripTime').fill('0.2');
   await page.locator('#cableTripTime').press('Tab');
   const fault = page.locator('#cableSizingBody [data-cable-fault]').first();
@@ -178,12 +178,12 @@ test('cable sizing settings and circuit fault inputs persist after reload', asyn
   await fault.press('Tab');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
   expect(saved.engineering.cableMaxVdrop).toBe(2.5);
-  expect(saved.engineering.cableInsulation).toBe('XLPE');
+  expect(saved.engineering.cableInsulation).toBe('PVC');
   expect(saved.engineering.cableTripTime).toBe(0.2);
   expect(saved.engineering.cableFaultInputs[key]).toBe('0.25');
   await page.reload();
   await expect(page.locator('#cableMaxVdrop')).toHaveValue('2.5');
-  await expect(page.locator('#cableInsulation')).toHaveValue('XLPE');
+  await expect(page.locator('#cableInsulation')).toHaveValue('PVC');
   await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
   await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
 });
