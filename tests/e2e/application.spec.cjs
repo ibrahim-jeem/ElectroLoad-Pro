@@ -201,3 +201,17 @@ test('project category and additional distribution board types are available and
   const types = await page.locator('#boardTableBody tr').nth(1).locator('select').first().locator('option').allTextContents();
   expect(types).toContain('BDB');
 });
+
+test('per-load current and demand factors are editable and affect calculated current and demand', async ({ page }) => {
+  const first = page.locator('#fixtureTableBody tr').first();
+  const base = await page.evaluate(() => itemCurrent(fixtures[0]));
+  await first.locator('input[type="number"]').nth(3).fill('1.65');
+  await first.locator('input[type="number"]').nth(3).press('Tab');
+  await expect.poll(() => page.evaluate(() => itemCurrent(fixtures[0]))).toBeCloseTo(base * 1.65, 2);
+  await first.locator('input[type="number"]').nth(4).fill('0.5');
+  await first.locator('input[type="number"]').nth(4).press('Tab');
+  await expect(page.locator('#demandKwVal')).not.toHaveText(await page.locator('#totalKwVal').innerText());
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
+  expect(saved.fixtures[0].currentFactor).toBe(1.65);
+  expect(saved.fixtures[0].demandFactor).toBe(0.5);
+});
