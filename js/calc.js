@@ -26,12 +26,9 @@ function recalculateAll() {
         const itemWatts = item.qty * item.watts;
         totalConnectedWatts += itemWatts;
 
-        // Demand Factor logic
-        let demandFactor = 1.0;
-        if (item.category === 'Lighting') demandFactor = 0.9;
-        else if (item.category === 'Receptacles') demandFactor = 0.7;
-        else if (item.category === 'HVAC') demandFactor = 0.85;
-
+        // Do not invent category-wide diversity factors. Use an explicit per-load factor;
+        // the default is 1.00 until an engineer enters a documented demand/diversity basis.
+        const demandFactor = Number(item.demandFactor ?? 1);
         totalDemandWatts += itemWatts * demandFactor;
     });
 
@@ -42,8 +39,8 @@ function recalculateAll() {
 
     // Phase totals come from the board roll-up (3-phase circuits split across R-Y-B)
     const rootS = boards[0].s;
-    phaseKw = { ...rootS.K };
-    phaseAmps = { ...rootS.A };
+    phaseKw = rootS.K ? { ...rootS.K } : { R:rootS.kw||0, Y:0, B:0 };
+    phaseAmps = rootS.A ? { ...rootS.A } : { R:rootS.a1||0, Y:0, B:0 };
 
     circuits.forEach((ckt) => {
         const itemWatts = ckt.watts;
@@ -59,25 +56,42 @@ function recalculateAll() {
         if ([...ckt.categories].every(c => c === 'Lighting')) curve = 'Type B';
         if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
 
-        // Wire Gauge Selection
-        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);
-        const recommendedWire = mcbRating === null ? null : (wireTable.find(w => w.ampacity * derating >= mcbRating) || null);
+        // Cable selection now uses the V2 reference-table engine; the legacy generic ampacity table is not used.
+        const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
+            Math.max(ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
+        const cableResult = mcbRating === null ? {valid:false,message:'Protective device is not sized.'} : calculateCableChecks({
+            designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance, wireUnit:config.wireUnit,
+            voltage:ckt.sup===3?config.voltageLL:config.voltageLN, phases:ckt.sup===3?3:1,
+            maxVdrop:Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3)),
+            installationMethod:engineering.cableMethod||'B2', loadedConductors:ckt.sup===3?3:2,
+            material:engineering.cableMaterial||'Cu', insulation:engineering.cableInsulation||'PVC',
+            ambientFactor:Number(engineering.cableAmbientFactor ?? engineering.ambientFactor ?? 1),
+            groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
+            conductorTempC:Number(engineering.cableTemp ?? 70), powerFactor:Number(engineering.cablePowerFactor||circuitPf),
+            reactanceOhmKm:Number(engineering.cableReactance ?? 0.08),
+            faultCurrentKA:(engineering.cableFaultInputs||{})[ckt.board+'|'+ckt.id] ?? '',
+            faultCurrentAtPointKA:engineering.cableFaultLevel, breakingCapacityKA:engineering.cableBreakingCapacity,
+            tripTime:Number(engineering.cableTripTime ?? 0.4),
+            localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
+            minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(mcbRating>=20?6:mcbRating>=15?4:mcbRating>=10?2.5:1.5):0
+        });
+        ckt.cableV2 = cableResult;
+        const recommendedWire = cableResult.valid ? {
+            size:cableResult.cable.size+' mm²', pe:cableResult.peMm2+' mm²',
+            ampacity:cableResult.Iz, resistance:cableResult.R
+        } : null;
         ckt.wire = recommendedWire;
         if (mcbRating === null || !recommendedWire) {
             const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-red-400">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': NO VALID BREAKER/CABLE SIZE IN THE AVAILABLE TABLE. Recommendation blocked.</td>';
+            row.innerHTML = '<td colspan="10" class="py-3 px-3 text-amber-300">' + escapeHTML(boardOf(ckt.board).name) + ' · ' + escapeHTML(ckt.id) + ': NO VALID BREAKER/CABLE SIZE — CABLE SELECTION BLOCKED — ' + escapeHTML(cableResult.message || 'Unsupported reference-table configuration.') + '</td>';
             calcBody.appendChild(row);
             ckt.vDropPct = null;
             return;
         }
 
-        // Voltage Drop Check (longest run in the circuit): %Vd = (2 * L * I * R) / V_LN
-        const resistancePerKm = recommendedWire.resistance;
-        const isTP = ckt.sup === 3;
-        const vDropVolts = (isTP ? Math.sqrt(3) : 2) * (ckt.distance / 1000) * circuitCurrent * resistancePerKm;
-        const vDropPct = (vDropVolts / (isTP ? config.voltageLL : config.voltageLN)) * 100;
-
-        const isVdropWarning = vDropPct > 3.0;
+        const vDropPct = cableResult.vDropPct;
+        const vDropLimit = Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3));
+        const isVdropWarning = !cableResult.voltageDropPass;
         ckt.vDropPct = vDropPct;
 
         // Add to calculated UI schedule table
@@ -91,7 +105,7 @@ function recalculateAll() {
             <td class="py-2.5 px-3 text-slate-400">${curve}</td>
             <td class="py-2.5 px-3 text-emerald-400 font-bold">${recommendedWire.size}</td>
             <td class="py-2.5 px-3 text-slate-400">${recommendedWire.pe}</td>
-            <td class="py-2.5 px-3 text-slate-400">${config.wireUnit === 'Metric' ? 'BYA / NYY' : 'THHN / THWN'}</td>
+            <td class="py-2.5 px-3 text-slate-400">${'IEC 60364-5-52 PVC / Cu'}</td>
             <td class="py-2.5 px-3 ${isVdropWarning ? 'text-red-400 font-bold' : 'text-slate-300'}">${vDropPct.toFixed(2)}%</td>
             <td class="py-2.5 px-3 text-center">
                 ${isVdropWarning 
@@ -112,7 +126,7 @@ function recalculateAll() {
     if (config.phase.includes('3P')) {
         totalMainAmps = Math.max(phaseAmps.R, phaseAmps.Y, phaseAmps.B);
     } else {
-        totalMainAmps = totalConnectedWatts / (config.voltageLN * avgPf);
+        totalMainAmps = circuits.reduce((sum,c)=>sum + Number(c.demandCurrent ?? c.current),0);
     }
 
     // Main MCCB Rating
@@ -162,6 +176,9 @@ function recalculateAll() {
     renderBoardTable();
     renderEngineeringStatus(mainMccb);
 
+    // Keep the cable verification module synchronized with calculated circuits.
+    if (typeof renderCableSizing === 'function') renderCableSizing();
+
     // Re-render Dynamic Single-Line Diagram
     renderSLD(mainMccb, totalMainAmps);
     if (typeof saveProject === 'function') saveProject();
@@ -206,8 +223,9 @@ function renderEngineeringStatus(mainMccb) {
  const hasSource=engineering.sourceFaultKA!=='' && Number.isFinite(source) && source>0;
  const hasIcu=engineering.mainBreakerIcuKA!=='' && Number.isFinite(icu) && icu>0;
  const faultStatus=hasSource&&hasIcu ? (icu>=source ? '<span class="text-emerald-400 font-semibold">PASS — entered MDB Icu/Icn is not below entered prospective fault current</span>' : '<span class="text-red-400 font-semibold">FAIL — breaker breaking capacity is below entered MDB fault current</span>') : '<span class="text-amber-300 font-semibold">DATA REQUIRED — enter utility / study fault current and breaker Icu/Icn</span>';
- const derating=Number(engineering.ambientFactor||1)*Number(engineering.groupingFactor||1); const method=escapeHTML(engineering.installationMethod||'Not selected');
- host.innerHTML='<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Cable ampacity screening</div><div class="text-slate-100 font-semibold">'+method+' · combined correction '+derating.toFixed(3)+'</div><div class="text-slate-500 mt-1">User-entered factors applied to generic reference ampacity. Final selection still needs the correct standard table for cable type, installation, grouping and temperature.</div></div>'+
- '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">MDB short-circuit breaking capacity</div><div>'+faultStatus+'</div><div class="text-slate-500 mt-1">Entered-value comparison only; downstream fault current is not calculated.</div></div>'+
- '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Protection coordination / earthing</div><div class="text-amber-300 font-semibold">NOT VERIFIED — manufacturer TCC/selectivity tables and earthing-system data required</div><div class="text-slate-500 mt-1">Voltage drop uses tabulated resistance only; reactance, operating temperature, harmonics and source impedance are not fully modelled.</div></div>';
+ const ca=Number(engineering.cableAmbientFactor??1), cg=Number(engineering.cableGroupingFactor??1);
+ const method=escapeHTML(engineering.cableMethod||'B2');
+ host.innerHTML='<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Cable sizing V2 reference profile</div><div class="text-slate-100 font-semibold">'+method+' · Ca × Cg = '+(ca*cg).toFixed(3)+'</div><div class="text-slate-500 mt-1">IEC 60364-5-52 Annex B Tables B.52.2/B.52.4; Cu/PVC, 2 or 3 loaded conductors, methods A1/A2/B1/B2/C. Unsupported combinations are blocked.</div></div>'+
+ '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">MDB short-circuit breaking capacity</div><div>'+faultStatus+'</div><div class="text-slate-500 mt-1">Entered-value comparison only; downstream fault current requires a short-circuit study.</div></div>'+
+ '<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Protection coordination / earthing</div><div class="text-amber-300 font-semibold">NOT VERIFIED — ADS/loop impedance, manufacturer TCC and selectivity remain engineer checks</div><div class="text-slate-500 mt-1">Project category: '+escapeHTML(config.projectType||'Residential')+'. Residential local minimum conductor / ECC rules are applied only in the stated local profile.</div></div>';
 }

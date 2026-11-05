@@ -23,6 +23,8 @@ function exportToExcel() {
             "Unit Watts": item.watts,
             "Total Power (W)": itemWatts,
             "Power Factor": item.pf,
+            "Current Multiplier": item.currentFactor ?? defaultCurrentFactor(item),
+            "Demand Factor": item.demandFactor ?? 1,
             "Phase": item.phase,
             "Fixture Current (A)": current.toFixed(2),
             "Circuit Design Current (A)": circuitCurrent.toFixed(2),
@@ -45,19 +47,72 @@ function exportToExcel() {
         };
     });
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(boardRows), "Boards");
+    const cableFaults = engineering.cableFaultInputs || {};
+    const cableMaxDrop = Number(engineering.cableMaxVdrop ?? 2.5);
+    const cableTripTime = Number(engineering.cableTripTime ?? 0.4);
+    const cableRows = circuits.map(ckt => {
+        const key = ckt.board + '|' + ckt.id;
+        const fault = Object.prototype.hasOwnProperty.call(cableFaults, key) ? cableFaults[key] : '';
+        const phases = Number(ckt.sup) === 3 ? 3 : 1;
+        const pf = ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) > 0
+            ? ckt.watts / ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) : 0.9;
+        const result = calculateCableChecks({
+            designCurrent: ckt.current, breakerRating: ckt.mcb, lengthM: ckt.distance, wireUnit: config.wireUnit,
+            voltage: phases === 3 ? config.voltageLL : config.voltageLN, phases,
+            maxVdrop: cableMaxDrop, faultCurrentKA: fault, tripTime: cableTripTime,
+            insulation: engineering.cableInsulation || 'PVC',
+            installationMethod: engineering.cableMethod || 'B2',
+            loadedConductors: phases === 3 ? 3 : 2,
+            material: engineering.cableMaterial || 'Cu',
+            ambientFactor: Number(engineering.cableAmbientFactor ?? 1),
+            groupingFactor: Number(engineering.cableGroupingFactor ?? 1),
+            conductorTempC: Number(engineering.cableTemp ?? 70),
+            powerFactor: Number(engineering.cablePowerFactor || pf),
+            reactanceOhmKm: Number(engineering.cableReactance ?? 0.08),
+            faultCurrentAtPointKA: engineering.cableFaultLevel,
+            breakingCapacityKA: engineering.cableBreakingCapacity,
+            localPeMinimum: config.standard === 'BNBC' && config.projectType === 'Residential' ? 4 : 0,
+            minimumSizeMm2: config.standard === 'BNBC' && config.projectType === 'Residential' ? (ckt.mcb >= 20 ? 6 : ckt.mcb >= 15 ? 4 : ckt.mcb >= 10 ? 2.5 : 1.5) : 0
+        });
+        return {
+            Board: boardOf(ckt.board).name, Circuit: ckt.id, Supply: phases + '-phase',
+            'Design Current Ib (A)': Number(ckt.current.toFixed(2)),
+            'Breaker Rating In (A)': ckt.mcb == null ? 'NOT SIZED' : ckt.mcb,
+            'Selected Phase Cable': result.valid ? result.phaseMm2 + ' mm² Cu' : 'BLOCKED',
+            'Neutral Cable': result.valid ? result.neutralMm2 + ' mm² Cu (same as phase)' : 'NOT CALCULATED',
+            'Reference Ampacity (A)': result.valid ? result.cable.ampacity : result.message,
+            'Corrected Ampacity Iz (A)': result.valid ? Number(result.Iz.toFixed(2)) : 'NOT CALCULATED',
+            'Voltage Drop (%)': result.valid ? Number(result.vDropPct.toFixed(2)) : 'NOT CALCULATED',
+            'Voltage Drop Limit (%)': cableMaxDrop,
+            'PE Conductor (mm²)': result.valid ? result.peMm2 : 'NOT CALCULATED',
+            'Fault Current at Circuit (kA)': fault || 'DATA REQUIRED',
+            'Thermal Check': result.valid ? result.thermal.status : 'NOT CALCULATED',
+            'Breaker Breaking Capacity Check': result.valid ? result.breakingCheck.status : 'DATA REQUIRED',
+            'Ib ≤ In ≤ Iz': result.valid ? (result.coordination ? 'PASS' : 'FAIL') : 'BLOCKED',
+            'Overall': result.valid ? result.status : 'BLOCKED — ' + result.message,
+            'Installation Method': engineering.cableMethod || 'B2',
+            'Source': result.valid ? result.source : 'No applicable ampacity reference column',
+            'Scope': 'Engineering screening only; not a compliance certificate'
+        };
+    });
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(cableRows), "Cable Verification");
+
     const faultKnown = engineering.sourceFaultKA !== '' && Number(engineering.sourceFaultKA) > 0;
     const icuKnown = engineering.mainBreakerIcuKA !== '' && Number(engineering.mainBreakerIcuKA) > 0;
     const engineeringRows = [
+        { Check: "Project category", Input: config.projectType || "Residential", Result: "Occupancy context only; no unsupported category-wide demand multipliers are assumed" },
+        { Check: "Current multiplier basis", Input: "Per-load", Result: "Bangladesh residential guideline: 1.65 for fluorescent lamps, fans and small inductive loads up to 1 kW; editable per load" },
+        { Check: "Demand/diversity factor basis", Input: "Engineer-entered per-load factor", Result: "No universal category-wide diversity percentage is assumed; document the project study / authority basis" },
         { Check: "Drawing convention", Input: engineering.sldConvention, Result: "Illustrative symbol convention; not a certified standards library" },
-        { Check: "Installation reference", Input: engineering.installationMethod, Result: "Reference method selected; cable-specific table verification required" },
-        { Check: "Ambient correction factor", Input: engineering.ambientFactor, Result: "User-entered factor applied to generic ampacity table" },
-        { Check: "Grouping correction factor", Input: engineering.groupingFactor, Result: "User-entered factor applied to generic ampacity table" },
+        { Check: "Cable installation reference", Input: engineering.cableMethod || "B2", Result: "IEC 60364-5-52 simplified unburied copper/PVC 2-loaded-conductor profile" },
+        { Check: "Ambient correction factor", Input: engineering.cableAmbientFactor ?? 1, Result: "Engineer-entered Ca applied to the IEC reference ampacity" },
+        { Check: "Grouping correction factor", Input: engineering.cableGroupingFactor ?? 1, Result: "Engineer-entered Cg applied to the IEC reference ampacity" },
         { Check: "MDB prospective fault current (kA)", Input: faultKnown ? Number(engineering.sourceFaultKA) : "DATA REQUIRED", Result: "Utility / short-circuit study input" },
         { Check: "Main breaker Icu/Icn (kA)", Input: icuKnown ? Number(engineering.mainBreakerIcuKA) : "DATA REQUIRED", Result: faultKnown && icuKnown ? (Number(engineering.mainBreakerIcuKA) >= Number(engineering.sourceFaultKA) ? "Entered values pass simple MDB comparison" : "FAIL — breaker rating below entered fault level") : "Cannot compare until both values are entered" },
         { Check: "Downstream fault levels", Input: "DATA REQUIRED", Result: "Not calculated — source and feeder R/X impedances, lengths and fault assumptions required" },
         { Check: "Protection selectivity", Input: "NOT VERIFIED", Result: "Manufacturer time-current curves / selectivity tables required" },
         { Check: "Earthing / ADS", Input: "NOT VERIFIED", Result: "Earthing arrangement, loop impedance, disconnection time and protective-device data required" },
-        { Check: "Voltage drop model", Input: "Preliminary", Result: "Resistance-only estimate; reactance, conductor operating temperature and harmonics not fully modelled" }
+        { Check: "Voltage drop model", Input: "IEC-style R/X model", Result: "PF, reactance and conductor operating temperature included; harmonics and transient effects are not modelled" }
     ];
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(engineeringRows), "Engineering Checks");
     XLSX.writeFile(workbook, "Electrical_Load_Schedule.xlsx");

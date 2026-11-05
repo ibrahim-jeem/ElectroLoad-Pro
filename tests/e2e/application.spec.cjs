@@ -132,9 +132,9 @@ test('SLD uses navy drafting sheet and phase-specific feeder taps with separate 
 });
 
 test('engineering inputs persist and MDB Icu is compared with entered fault level', async ({ page }) => {
-  await page.locator('#ambientFactor').fill('0.85');
-  await page.locator('#ambientFactor').press('Tab');
-  await expect(page.locator('#sldEngineeringStatus')).toContainText('combined correction 0.850');
+  await page.locator('#cableAmbientFactor').fill('0.85');
+  await page.locator('#cableAmbientFactor').press('Tab');
+  await expect(page.locator('#sldEngineeringStatus')).toContainText('Ca × Cg = 0.850');
   await page.locator('#sourceFaultKA').fill('20');
   await page.locator('#sourceFaultKA').press('Tab');
   await page.locator('#mainBreakerIcuKA').fill('10');
@@ -144,7 +144,90 @@ test('engineering inputs persist and MDB Icu is compared with entered fault leve
   await page.locator('#mainBreakerIcuKA').press('Tab');
   await expect(page.locator('#sldEngineeringStatus')).toContainText('PASS — entered MDB Icu/Icn');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
-  expect(saved.engineering.ambientFactor).toBe(0.85);
+  expect(saved.engineering.cableAmbientFactor).toBe(0.85);
   expect(saved.engineering.sourceFaultKA).toBe('20');
   expect(saved.engineering.mainBreakerIcuKA).toBe('25');
+});
+
+test('cable sizing engine renders circuit-linked cable verification rows', async ({ page }) => {
+  await expect(page.locator('#cableSizingSection')).toBeVisible();
+  await expect(page.locator('#cableSizingBody tr').first()).toBeVisible();
+  await expect(page.locator('#cableSizingSummary')).toContainText('Circuits analysed');
+  await expect(page.locator('#cableTableMode')).toContainText('Metric copper');
+});
+
+test('per-circuit fault current triggers the adiabatic thermal check', async ({ page }) => {
+  const fault = page.locator('#cableSizingBody [data-cable-fault]').first();
+  await expect(fault).toBeVisible();
+  await fault.fill('1');
+  await fault.press('Tab');
+  const firstRow = page.locator('#cableSizingBody tr').first();
+  await expect(firstRow.locator('td').nth(7)).toContainText('FAIL');
+  await expect(firstRow.locator('td').nth(8)).toContainText('REVIEW / FAIL');
+});
+
+test('cable sizing settings and circuit fault inputs persist after reload', async ({ page }) => {
+  await page.locator('#cableMaxVdrop').fill('2.5');
+  await page.locator('#cableMaxVdrop').press('Tab');
+  await page.locator('#cableInsulation').selectOption('PVC');
+  await page.locator('#cableTripTime').fill('0.2');
+  await page.locator('#cableTripTime').press('Tab');
+  const fault = page.locator('#cableSizingBody [data-cable-fault]').first();
+  const key = await fault.getAttribute('data-cable-fault');
+  await fault.fill('0.25');
+  await fault.press('Tab');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
+  expect(saved.engineering.cableMaxVdrop).toBe(2.5);
+  expect(saved.engineering.cableInsulation).toBe('PVC');
+  expect(saved.engineering.cableTripTime).toBe(0.2);
+  expect(saved.engineering.cableFaultInputs[key]).toBe('0.25');
+  await page.reload();
+  await expect(page.locator('#cableMaxVdrop')).toHaveValue('2.5');
+  await expect(page.locator('#cableInsulation')).toHaveValue('PVC');
+  await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
+  await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
+});
+
+test('project category and additional distribution board types are available and persist', async ({ page }) => {
+  await page.locator('#projectTypeSelect').selectOption('Industrial');
+  await expect(page.locator('#projectTypeNote')).toContainText('motor starting');
+  await page.locator('#projectTypeSelect').selectOption('Commercial');
+  await page.reload();
+  await expect(page.locator('#projectTypeSelect')).toHaveValue('Commercial');
+  await page.locator('#boardTableBody tr').nth(1).locator('select').first().selectOption({ label: 'FDB' });
+  await expect(page.locator('#boardTableBody tr').nth(1).locator('select').first()).toHaveValue('FDB');
+  await page.locator('#boardTableBody tr').nth(2).locator('select').first().selectOption({ label: 'DB' });
+  await expect(page.locator('#boardTableBody tr').nth(2).locator('select').first()).toHaveValue('DB');
+  const types = await page.locator('#boardTableBody tr').nth(1).locator('select').first().locator('option').allTextContents();
+  expect(types).toContain('BDB');
+});
+
+test('per-load current and demand factors are editable and affect calculated current and demand', async ({ page }) => {
+  const base = await page.evaluate(() => itemCurrent(fixtures[0]));
+  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(3).fill('1.65');
+  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(3).press('Tab');
+  await expect.poll(() => page.evaluate(() => itemCurrent(fixtures[0]))).toBeCloseTo(base * 1.65, 2);
+  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(4).fill('0.5');
+  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(4).press('Tab');
+  await expect(page.locator('#demandKwVal')).not.toHaveText(await page.locator('#totalKwVal').innerText());
+  const feederCurrent = await page.evaluate(() => { const c=circuits.find(c=>c.items.includes(fixtures[0])); return {connected:c.current,demand:c.demandCurrent}; });
+  expect(feederCurrent.demand).toBeLessThan(feederCurrent.connected);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
+  expect(saved.fixtures[0].currentFactor).toBe(1.65);
+  expect(saved.fixtures[0].demandFactor).toBe(0.5);
+});
+
+test('residential 2-ton AC sizing respects Bangladesh 15A circuit minimum cable rule', async ({ page }) => {
+  await page.evaluate(() => {
+    fixtures.push({id:Math.max(...fixtures.map(f=>f.id))+1,name:'2 Ton Split AC',room:'Test',board:'b0',sup:1,category:'HVAC',qty:1,watts:2400,pf:0.85,currentFactor:1,demandFactor:1,distance:25,phase:'R'});
+    recalculateAll();
+  });
+  const result = await page.evaluate(() => {
+    const c = circuits.find(x => x.items.some(i => i.name === '2 Ton Split AC'));
+    return { current:c.current, breaker:c.mcb, cable:c.cableV2?.cable?.size, valid:c.cableV2?.valid };
+  });
+  expect(result.current).toBeCloseTo(2400/(230*0.85), 2);
+  expect(result.breaker).toBe(16);
+  expect(result.valid).toBeTruthy();
+  expect(result.cable).toBe(4);
 });

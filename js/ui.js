@@ -22,6 +22,9 @@ function updateGrouping() {
 // System Configuration Updates
 function updateConfig() {
     config.standard = document.getElementById('standardSelect').value;
+    config.projectType = document.getElementById('projectTypeSelect')?.value || config.projectType || 'Residential';
+    const projectNote = document.getElementById('projectTypeNote');
+    if(projectNote) projectNote.textContent = config.projectType==='Residential' ? 'Residential profile: Bangladesh Power Division residential wiring guideline is a relevant local reference. Its stated scope is residential; verify project-specific requirements.' : config.projectType==='Commercial' ? 'Commercial profile: apply BNBC occupancy provisions and the adopted IEC/BS/NFPA design basis. No blanket commercial diversity multiplier is assumed.' : 'Industrial profile: use equipment nameplate data, motor starting, process duty, harmonics, fault level and industrial installation conditions. Residential defaults are not applied.';
     const systemPhase = document.getElementById('systemPhaseSelect').value;
     config.phase = systemPhase;
 
@@ -90,6 +93,12 @@ function renderFixtureTable() {
                 <input type="number" step="0.01" min="0.5" max="1.0" value="${item.pf}" onchange="updateFixture(${item.id}, 'pf', parseFloat(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
             </td>
             <td class="py-2 px-2">
+                <input type="number" step="0.05" min="0.1" max="3" value="${item.currentFactor ?? defaultCurrentFactor(item)}" title="Residential guideline uses 1.65 for fans, fluorescent lamps and small inductive loads up to 1 kW. Editable engineer input." onchange="updateFixture(${item.id}, 'currentFactor', parseFloat(this.value))" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
+            </td>
+            <td class="py-2 px-2">
+                <input type="number" step="0.05" min="0" max="1" value="${item.demandFactor ?? 1}" title="Engineer-entered demand factor; default 1.00 until a documented diversity study is applied." onchange="updateFixture(${item.id}, 'demandFactor', parseFloat(this.value))" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
+            </td>
+            <td class="py-2 px-2">
                 <input type="number" min="1" value="${item.distance}" onchange="updateFixture(${item.id}, 'distance', parseFloat(this.value))" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">
             </td>
             <td class="py-2 px-2">
@@ -121,7 +130,7 @@ function renderFixtureTable() {
 function addNewFixtureRow() {
     const newId = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.id)) + 1 : 1;
     const board = boards[0].id;
-    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, distance: 15, phase: 'R' });
+    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, demandFactor:1, distance: 15, phase: 'R' });
     renderFixtureTable();
     recalculateAll();
 }
@@ -166,7 +175,7 @@ function addPresetItem(name, category, watts, pf, sup = 1) {
     const phases = ['R', 'Y', 'B'];
     const assignedPhase = phases[fixtures.length % 3];
 
-    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, distance: 20, phase: assignedPhase });
+    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, demandFactor:1, distance: 20, phase: assignedPhase });
     closePresetModal();
     renderFixtureTable();
     recalculateAll();
@@ -209,29 +218,43 @@ function removeBoard(id) {
 function renderBoardTable() {
     const tb = document.getElementById('boardTableBody');
     tb.innerHTML = '';
-    const wt = config.wireUnit === 'Metric' ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
     boards.forEach((b, idx) => {
         const s = b.s || { kw: 0, mx: 0, cb: 6 };
         const isRoot = idx === 0, bs = bSup(b);
-        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);
-        const wire = s.cb == null ? null : (wt.find(w => w.ampacity * derating >= s.cb) || null);
-        let vd = '&mdash;', vdWarn = false;
-        if (!isRoot && wire) { const L = b.dist / 1000; const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100; s.feederWire=wire; s.feederVdropPct=pct; vdWarn = pct > 3.0; vd = pct.toFixed(2) + '%'; } else if (!isRoot) { s.feederWire=null; s.feederVdropPct=null; }
-        if (!isRoot && !wire) vd = 'NOT SIZED';
+        const phases = bs === 3 ? 3 : 1;
+        const cableResult = isRoot ? null : calculateCableChecks({
+            wireUnit:config.wireUnit, designCurrent:Number(s.mx||0), breakerRating:Number(s.cb||0),
+            lengthM:Number(b.dist||0), voltage:phases===3?config.voltageLL:config.voltageLN, phases,
+            maxVdrop:Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3)),
+            installationMethod:engineering.cableMethod||'B2', loadedConductors:phases===3?3:2,
+            material:engineering.cableMaterial||'Cu', insulation:engineering.cableInsulation||'PVC',
+            ambientFactor:Number(engineering.cableAmbientFactor ?? engineering.ambientFactor ?? 1),
+            groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
+            conductorTempC:Number(engineering.cableTemp??70), powerFactor:Number(engineering.cablePowerFactor||0.9),
+            reactanceOhmKm:Number(engineering.cableReactance??0.08),
+            localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
+            minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(Number(s.cb)>=20?6:Number(s.cb)>=15?4:Number(s.cb)>=10?2.5:1.5):0
+        });
+        const wire = cableResult && cableResult.valid ? {size:cableResult.cable.size+' mm²',pe:cableResult.peMm2+' mm²'} : null;
+        let vd = isRoot ? '&mdash;' : 'BLOCKED', vdWarn = false;
+        if (!isRoot && cableResult && cableResult.valid) {
+            s.feederWire=wire; s.feederVdropPct=cableResult.vDropPct;
+            vdWarn=!cableResult.voltageDropPass; vd=cableResult.vDropPct.toFixed(2)+'%';
+        } else if(!isRoot) { s.feederWire=null; s.feederVdropPct=null; }
         const cur = bs === 3 && s.A ? `R ${s.A.R.toFixed(1)} &middot; Y ${s.A.Y.toFixed(1)} &middot; B ${s.A.B.toFixed(1)}` : `${(s.mx || 0).toFixed(1)} A (${b.e || 'R'})`;
         const parents = boards.filter(k => k !== b && bSup(k) >= bSup(b) && !isDescendant(k, b));
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
             <td class="py-2 px-2"><input type="text" value="${escapeHTML(b.name)}" onchange="updateBoard('${b.id}', 'name', this.value.trim() || this.defaultValue)" class="w-28 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 font-sans focus:border-sky-500 focus:outline-none"><input type="text" aria-label="Board area" placeholder="Area" value="${escapeHTML(b.room || '')}" onchange="updateBoard('${b.id}', 'room', this.value.trim())" class="w-24 mt-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-400"></td>
-            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-300">MDB</span>' : `<select onchange="updateBoard('${b.id}', 'type', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${['MDB', 'SDB', 'SB', 'FDB', 'RDB'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
+            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-300">MDB</span>' : `<select onchange="updateBoard('${b.id}', 'type', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${['MDB', 'FDB', 'DB', 'BDB', 'SDB', 'SB', 'RDB'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
             <td class="py-2 px-2">${isRoot ? '<span class="text-slate-400">Grid Supply</span>' : `<select onchange="updateBoard('${b.id}', 'par', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${parents.map(k => `<option value="${k.id}" ${b.par === k.id ? 'selected' : ''}>${escapeHTML(k.name)}</option>`).join('')}</select>`}</td>
             <td class="py-2 px-2"><select ${is3PSystem() ? '' : 'disabled'} onchange="updateBoard('${b.id}', 'sup', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none"><option value="3" ${Number(b.sup) === 3 ? 'selected' : ''}>3&Phi;</option><option value="1" ${Number(b.sup) === 1 ? 'selected' : ''}>1&Phi;</option></select></td>
             <td class="py-2 px-2">${isRoot ? '&mdash;' : `<input type="number" min="1" value="${b.dist}" onchange="updateBoard('${b.id}', 'dist', parseFloat(this.value) || 1)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">`}</td>
             <td class="py-2 px-2 text-slate-300">${(s.kw || 0).toFixed(2)}</td>
             <td class="py-2 px-2 text-amber-400 font-bold">${cur}</td>
             <td class="py-2 px-2 text-sky-400 font-bold">${s.cb == null ? 'NOT SIZED' : s.cb + 'A'} ${bs === 3 ? '3P' : '1P'} ${isRoot ? 'MCCB' : 'MCB'}</td>
-            <td class="py-2 px-2 text-emerald-400 font-bold">${wire ? wire.size : 'NOT SIZED'}</td>
+            <td class="py-2 px-2 text-emerald-400 font-bold">${isRoot ? '&mdash;' : wire ? wire.size : 'NOT SIZED'}</td>
             <td class="py-2 px-2 ${vdWarn ? 'text-red-400 font-bold' : 'text-slate-300'}">${vd}</td>
             <td class="py-2 px-2 text-right no-print">${isRoot ? '' : `<button onclick="removeBoard('${b.id}')" class="text-slate-500 hover:text-red-400 p-1 transition"><i class="fa-solid fa-trash-can"></i></button>`}</td>
         `;

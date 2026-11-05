@@ -8,12 +8,13 @@ let engineering = { sldConvention: 'IEC', installationMethod: 'C', ambientFactor
 
 let config = {
     standard: 'BNBC',
+    projectType: 'Residential',
     phase: '3P',
     voltageLN: 230,
     voltageLL: 400,
     frequency: 50,
     wireUnit: 'Metric', // Metric or AWG
-    safetyFactor: 1.25
+    safetyFactor: 1.00
 };
 
 let fixtures = [
@@ -79,6 +80,7 @@ const AWG_WIRE_TABLE = [
     { size: '2/0 AWG', ampacity: 145, resistance: 0.31, pe: '4 AWG' },
     { size: '4/0 AWG', ampacity: 195, resistance: 0.19, pe: '2 AWG' }
 ];
+
 
 const STANDARD_BREAKER_RATINGS = [6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400];
 const ENGINEERING_LIMITATION_NOTICE = 'Preliminary estimate only. Verify cable derating, fault level, breaking capacity, disconnection time, earthing and applicable code before construction.';

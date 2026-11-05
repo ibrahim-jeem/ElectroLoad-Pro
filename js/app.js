@@ -1,7 +1,7 @@
 /* ElectroLoad Pro | app.js */
 function saveProject() {
     try {
-        const snapshot={version:3,savedAt:new Date().toISOString(),config,engineering,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
+        const snapshot={version:4,savedAt:new Date().toISOString(),config,engineering,grouping,fixtures,boards:boards.map(b=>({id:b.id,name:b.name,type:b.type,room:b.room||'General',par:b.par,sup:b.sup,dist:b.dist}))};
         localStorage.setItem('elpro_project_v2',JSON.stringify(snapshot));
         localStorage.setItem('elpro_project_v1',JSON.stringify(snapshot));
         const status=document.getElementById('projectSaveStatus');
@@ -19,9 +19,14 @@ function loadProject() {
         const raw=localStorage.getItem('elpro_project_v2')||localStorage.getItem('elpro_project_v1');
         if(!raw)return false;
         const saved=JSON.parse(raw);
-        if(!saved||![1,2,3].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
+        if(!saved||![1,2,3,4].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
         if(new Set(saved.boards.map(b=>b.id)).size!==saved.boards.length)throw new Error('Saved project has duplicate board IDs.');
         config={...config,...saved.config};engineering={...engineering,...(saved.engineering||{})};grouping={...grouping,...saved.grouping};
+        // Migrate v1 cable controls into the v2-specific settings without discarding user-entered factors.
+        if(!engineering.cableMethod && ['A1','A2','B1','B2','C'].includes(engineering.installationMethod)) engineering.cableMethod=engineering.installationMethod;
+        if(!['A1','A2','B1','B2','C'].includes(engineering.cableMethod)) engineering.cableMethod='B2';
+        if(engineering.cableAmbientFactor==null && Number.isFinite(Number(engineering.ambientFactor))) engineering.cableAmbientFactor=Number(engineering.ambientFactor);
+        if(engineering.cableGroupingFactor==null && Number.isFinite(Number(engineering.groupingFactor))) engineering.cableGroupingFactor=Number(engineering.groupingFactor);
         fixtures=saved.fixtures.map(f=>({...f,room:f.room||'General'}));
         boards=saved.boards.map(b=>({...b,room:b.room||'General'}));
         const error=validateBoardHierarchy();
@@ -37,6 +42,7 @@ function loadProject() {
 window.addEventListener('DOMContentLoaded',()=>{
     loadProject();
     const setValue=(id,value)=>{const el=document.getElementById(id);if(el)el.value=String(value);};
+    setValue('projectTypeSelect',config.projectType||'Residential');
     setValue('standardSelect',config.standard);setValue('systemPhaseSelect',config.phase);
     setValue('freqSelect',config.frequency);setValue('wireUnitSelect',config.wireUnit);setValue('safetyFactorSelect',config.safetyFactor);
     document.getElementById('autoGroupToggle').checked=!!grouping.auto;
@@ -48,7 +54,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     setValue('groupingFactor',engineering.groupingFactor);
     setValue('sourceFaultKA',engineering.sourceFaultKA);
     setValue('mainBreakerIcuKA',engineering.mainBreakerIcuKA);
-    updateConfig();updateGrouping();renderBoardTable();saveProject();
+    updateConfig();updateGrouping();renderBoardTable();
+    if (typeof initCableSizingUI === 'function') initCableSizingUI();
+    saveProject();
     // Inline handlers update the data before the bubbling event reaches this listener.
     document.addEventListener('change',()=>saveProject());
     document.addEventListener('click',event=>{
@@ -61,6 +69,9 @@ function toggleFormulaModal(){document.getElementById('formulaModal').classList.
 function resetProject(){
     if(confirm('Reset all load entries to default template?')){
         boards=[{id:'b0',name:'MDB',type:'MDB',room:'Main',par:'',sup:3,dist:0}];
+        config.projectType='Residential';
+        const projectTypeSelect=document.getElementById('projectTypeSelect'); if(projectTypeSelect)projectTypeSelect.value='Residential';
+        const projectTypeNote=document.getElementById('projectTypeNote'); if(projectTypeNote)projectTypeNote.textContent='Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.';
         fixtures=[
             {id:1,name:'Main Office Lighting',room:'Office',board:'b0',sup:1,category:'Lighting',qty:10,watts:18,pf:0.95,distance:15,phase:'R'},
             {id:2,name:'Workstation Sockets',room:'Office',board:'b0',sup:1,category:'Receptacles',qty:6,watts:180,pf:0.90,distance:20,phase:'Y'}
@@ -72,12 +83,8 @@ function resetProject(){
 function updateEngineering() {
     const read = (id, fallback) => { const el = document.getElementById(id); return el ? el.value : fallback; };
     engineering.sldConvention = read('sldConvention', engineering.sldConvention);
-    engineering.installationMethod = read('installationMethod', engineering.installationMethod);
-    engineering.ambientFactor = Number(read('ambientFactor', engineering.ambientFactor));
-    engineering.groupingFactor = Number(read('groupingFactor', engineering.groupingFactor));
     engineering.sourceFaultKA = read('sourceFaultKA', engineering.sourceFaultKA);
     engineering.mainBreakerIcuKA = read('mainBreakerIcuKA', engineering.mainBreakerIcuKA);
-    if (!Number.isFinite(engineering.ambientFactor) || engineering.ambientFactor <= 0 || engineering.ambientFactor > 1.5 || !Number.isFinite(engineering.groupingFactor) || engineering.groupingFactor <= 0 || engineering.groupingFactor > 1.5) { const status=document.getElementById('sldEngineeringStatus'); if(status) status.textContent='Correction factors must be greater than 0 and no more than 1.50.'; return; }
     recalculateAll(); saveProject();
 }
 function printSld() { document.body.classList.add('sld-print-mode'); const cleanup=()=>document.body.classList.remove('sld-print-mode'); window.addEventListener('afterprint',cleanup,{once:true}); window.print(); setTimeout(cleanup,1500); }

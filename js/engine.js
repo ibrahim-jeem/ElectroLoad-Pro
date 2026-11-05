@@ -35,7 +35,7 @@ function validateBoardHierarchy() {
     return null;
 }
 function validateProjectInputs() {
-    const bad = fixtures.find(f => ![+f.qty,+f.watts,+f.pf,+f.distance].every(Number.isFinite) || +f.qty <= 0 || +f.watts <= 0 || +f.pf <= 0 || +f.pf > 1 || +f.distance < 0);
+    const bad = fixtures.find(f => ![+f.qty,+f.watts,+f.pf,+f.distance,+((f.currentFactor ?? defaultCurrentFactor(f))),+((f.demandFactor ?? 1))].every(Number.isFinite) || +f.qty <= 0 || +f.watts <= 0 || +f.pf <= 0 || +f.pf > 1 || +f.distance < 0 || +((f.currentFactor ?? defaultCurrentFactor(f))) <= 0 || +((f.currentFactor ?? defaultCurrentFactor(f))) > 3 || +((f.demandFactor ?? 1)) < 0 || +((f.demandFactor ?? 1)) > 1);
     if (bad) return 'Invalid quantity, watts, power factor or distance in ' + (bad.name || 'a load') + '.';
     if (!Number.isFinite(+config.safetyFactor) || +config.safetyFactor <= 0) return 'Safety factor must be positive.';
     if (!Number.isFinite(+config.voltageLN) || +config.voltageLN <= 0 || !Number.isFinite(+config.voltageLL) || +config.voltageLL <= 0) return 'System voltage must be a valid positive number.';
@@ -45,9 +45,18 @@ function eSup(f) {
     const board = boardOf(f.board);
     return (is3PSystem() && Number(f.sup || 1) === 3 && bSup(board) === 3) ? 3 : 1;
 }
+function defaultCurrentFactor(f) {
+    if (config.projectType !== 'Residential') return 1;
+    const name = String(f.name || '').toLowerCase();
+    const fanOrFluorescent = /fan|fluorescent/.test(name);
+    const smallInductive = f.category === 'Motors' && Number(f.watts) <= 1000;
+    return fanOrFluorescent || smallInductive ? 1.65 : 1;
+}
 function itemCurrent(f) {
     const w = Number(f.qty) * Number(f.watts);
-    return eSup(f) === 3 ? w / (Math.sqrt(3) * config.voltageLL * f.pf) : w / (config.voltageLN * f.pf);
+    const currentFactor = Number(f.currentFactor ?? defaultCurrentFactor(f));
+    const base = eSup(f) === 3 ? w / (Math.sqrt(3) * config.voltageLL * f.pf) : w / (config.voltageLN * f.pf);
+    return base * currentFactor;
 }
 function isLowPower(f) { return f.watts <= LOW_POWER_W && f.category !== 'HVAC' && f.category !== 'Motors'; }
 function nextCktName(boardId, skip) {
@@ -137,28 +146,38 @@ function rollUp() {
         const nextPath = new Set(path); nextPath.add(board.id);
         const supply = bSup(board), own = circuits.filter(c=>c.board===board.id);
         const children = boards.filter(child=>child.par===board.id && child!==board);
-        const amps = {R:0,Y:0,B:0}, kw = {R:0,Y:0,B:0};
-        let singlePhaseAmps = 0, totalKw = 0;
+        const amps = {R:0,Y:0,B:0}, kw = {R:0,Y:0,B:0}, demandKw = {R:0,Y:0,B:0};
+        let singlePhaseAmps = 0, totalKw = 0, totalDemandKw = 0;
         const floating = [];
         own.forEach(c=>{
-            const loadKw=c.watts/1000; totalKw+=loadKw;
-            if(supply===1){singlePhaseAmps+=c.current;return;}
-            if(c.sup===3){['R','Y','B'].forEach(p=>{amps[p]+=c.current;kw[p]+=loadKw/3;});c.phase='3';}
-            else if(!grouping.auto && ['R','Y','B'].includes(c.phase)){amps[c.phase]+=c.current;kw[c.phase]+=loadKw;}
-            else floating.push({item:c,amps:c.current,kw:loadKw,isBoard:false});
+            const loadKw=c.watts/1000;
+            const circuitDemandCurrent=c.items.reduce((sum,f)=>sum+itemCurrent(f)*Number(f.demandFactor??1),0);
+            const circuitDemandKw=c.items.reduce((sum,f)=>sum+(Number(f.qty)*Number(f.watts)*Number(f.demandFactor??1)),0)/1000;
+            c.demandCurrent=circuitDemandCurrent;
+            c.demandWatts=circuitDemandKw*1000;
+            totalKw+=loadKw; totalDemandKw+=circuitDemandKw;
+            if(supply===1){singlePhaseAmps+=circuitDemandCurrent;return;}
+            if(c.sup===3){
+                ['R','Y','B'].forEach(p=>{amps[p]+=circuitDemandCurrent;kw[p]+=loadKw/3;demandKw[p]+=circuitDemandKw/3;});
+                c.phase='3';
+            } else if(!grouping.auto && ['R','Y','B'].includes(c.phase)){
+                amps[c.phase]+=circuitDemandCurrent;kw[c.phase]+=loadKw;demandKw[c.phase]+=circuitDemandKw;
+            } else floating.push({item:c,amps:circuitDemandCurrent,kw:loadKw,demandKw:circuitDemandKw,isBoard:false});
         });
         children.forEach(child=>{
-            const summary=calculate(child,nextPath); totalKw+=summary.kw;
+            const summary=calculate(child,nextPath); totalKw+=summary.kw; totalDemandKw+=summary.demandKw;
             if(supply===1){singlePhaseAmps+=summary.a1;return;}
-            if(bSup(child)===3){['R','Y','B'].forEach(p=>{amps[p]+=summary.A[p];kw[p]+=summary.K[p];});}
-            else floating.push({item:child,amps:summary.a1,kw:summary.kw,isBoard:true});
+            if(bSup(child)===3){
+                ['R','Y','B'].forEach(p=>{amps[p]+=summary.A[p];kw[p]+=summary.K[p];demandKw[p]+=summary.DK[p];});
+            } else floating.push({item:child,amps:summary.a1,kw:summary.kw,demandKw:summary.demandKw,isBoard:true});
         });
         floating.sort((a,b)=>b.amps-a.amps).forEach(entry=>{
             const phase=['R','Y','B'].reduce((best,p)=>amps[p]<amps[best]?p:best,'R');
-            amps[phase]+=entry.amps; kw[phase]+=entry.kw; assignPhase(entry.item,phase,entry.isBoard);
+            amps[phase]+=entry.amps; kw[phase]+=entry.kw; demandKw[phase]+=entry.demandKw;
+            assignPhase(entry.item,phase,entry.isBoard);
         });
         const maximum=supply===3?Math.max(amps.R,amps.Y,amps.B):singlePhaseAmps;
-        board.s={A:supply===3?amps:null,K:supply===3?kw:null,a1:singlePhaseAmps,kw:totalKw,mx:maximum,cb:selectBreakerRating(maximum*config.safetyFactor)};
+        board.s={A:supply===3?amps:null,K:supply===3?kw:null,DK:supply===3?demandKw:null,a1:singlePhaseAmps,kw:totalKw,demandKw:totalDemandKw,mx:maximum,cb:selectBreakerRating(maximum*config.safetyFactor)};
         return board.s;
     }
     calculate(root);
