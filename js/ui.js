@@ -218,15 +218,29 @@ function removeBoard(id) {
 function renderBoardTable() {
     const tb = document.getElementById('boardTableBody');
     tb.innerHTML = '';
-    const wt = config.wireUnit === 'Metric' ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
     boards.forEach((b, idx) => {
         const s = b.s || { kw: 0, mx: 0, cb: 6 };
         const isRoot = idx === 0, bs = bSup(b);
-        const derating = Number(engineering.ambientFactor || 1) * Number(engineering.groupingFactor || 1);
-        const wire = s.cb == null ? null : (wt.find(w => w.ampacity * derating >= s.cb) || null);
-        let vd = '&mdash;', vdWarn = false;
-        if (!isRoot && wire) { const L = b.dist / 1000; const pct = bs === 3 ? (Math.sqrt(3) * L * s.mx * wire.resistance / config.voltageLL) * 100 : (2 * L * s.mx * wire.resistance / config.voltageLN) * 100; s.feederWire=wire; s.feederVdropPct=pct; vdWarn = pct > 3.0; vd = pct.toFixed(2) + '%'; } else if (!isRoot) { s.feederWire=null; s.feederVdropPct=null; }
-        if (!isRoot && !wire) vd = 'NOT SIZED';
+        const phases = bs === 3 ? 3 : 1;
+        const cableResult = isRoot ? null : calculateCableChecks({
+            wireUnit:config.wireUnit, designCurrent:Number(s.mx||0), breakerRating:Number(s.cb||0),
+            lengthM:Number(b.dist||0), voltage:phases===3?config.voltageLL:config.voltageLN, phases,
+            maxVdrop:Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3)),
+            installationMethod:engineering.cableMethod||'B2', loadedConductors:phases===3?3:2,
+            material:engineering.cableMaterial||'Cu', insulation:engineering.cableInsulation||'PVC',
+            ambientFactor:Number(engineering.cableAmbientFactor ?? engineering.ambientFactor ?? 1),
+            groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
+            conductorTempC:Number(engineering.cableTemp??70), powerFactor:Number(engineering.cablePowerFactor||0.9),
+            reactanceOhmKm:Number(engineering.cableReactance??0.08),
+            localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
+            minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(Number(s.cb)>=20?6:Number(s.cb)>=15?4:Number(s.cb)>=10?2.5:1.5):0
+        });
+        const wire = cableResult && cableResult.valid ? {size:cableResult.cable.size+' mm²',pe:cableResult.peMm2+' mm²'} : null;
+        let vd = isRoot ? '&mdash;' : 'BLOCKED', vdWarn = false;
+        if (!isRoot && cableResult && cableResult.valid) {
+            s.feederWire=wire; s.feederVdropPct=cableResult.vDropPct;
+            vdWarn=!cableResult.voltageDropPass; vd=cableResult.vDropPct.toFixed(2)+'%';
+        } else if(!isRoot) { s.feederWire=null; s.feederVdropPct=null; }
         const cur = bs === 3 && s.A ? `R ${s.A.R.toFixed(1)} &middot; Y ${s.A.Y.toFixed(1)} &middot; B ${s.A.B.toFixed(1)}` : `${(s.mx || 0).toFixed(1)} A (${b.e || 'R'})`;
         const parents = boards.filter(k => k !== b && bSup(k) >= bSup(b) && !isDescendant(k, b));
         const tr = document.createElement('tr');
