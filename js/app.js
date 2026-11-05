@@ -42,6 +42,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('autoGroupToggle').checked=!!grouping.auto;
     document.getElementById('roomConsolidateToggle').checked=!!grouping.rooms;
     setValue('roomStrategySelect',grouping.strategy);
+    setValue('sldConvention',engineering.sldConvention);
+    setValue('installationMethod',engineering.installationMethod);
+    setValue('ambientFactor',engineering.ambientFactor);
+    setValue('groupingFactor',engineering.groupingFactor);
+    setValue('sourceFaultKA',engineering.sourceFaultKA);
+    setValue('mainBreakerIcuKA',engineering.mainBreakerIcuKA);
     updateConfig();updateGrouping();renderBoardTable();saveProject();
     // Inline handlers update the data before the bubbling event reaches this listener.
     document.addEventListener('change',()=>saveProject());
@@ -62,3 +68,16 @@ function resetProject(){
         renderFixtureTable();renderBoardTable();recalculateAll();saveProject();
     }
 }
+
+function updateEngineering() {
+    const read = (id, fallback) => { const el = document.getElementById(id); return el ? el.value : fallback; };
+    engineering.sldConvention = read('sldConvention', engineering.sldConvention);
+    engineering.installationMethod = read('installationMethod', engineering.installationMethod);
+    engineering.ambientFactor = Number(read('ambientFactor', engineering.ambientFactor));
+    engineering.groupingFactor = Number(read('groupingFactor', engineering.groupingFactor));
+    engineering.sourceFaultKA = read('sourceFaultKA', engineering.sourceFaultKA);
+    engineering.mainBreakerIcuKA = read('mainBreakerIcuKA', engineering.mainBreakerIcuKA);
+    if (!Number.isFinite(engineering.ambientFactor) || engineering.ambientFactor <= 0 || engineering.ambientFactor > 1.5 || !Number.isFinite(engineering.groupingFactor) || engineering.groupingFactor <= 0 || engineering.groupingFactor > 1.5) { const status=document.getElementById('sldEngineeringStatus'); if(status) status.textContent='Correction factors must be greater than 0 and no more than 1.50.'; return; }
+    recalculateAll(); saveProject();
+}
+function printSld() { document.body.classList.add('sld-print-mode'); const cleanup=()=>document.body.classList.remove('sld-print-mode'); window.addEventListener('afterprint',cleanup,{once:true}); window.print(); setTimeout(cleanup,1500); }
