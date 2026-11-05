@@ -120,7 +120,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const phases=Number(c.sup)===3?3:1;
     const faultInputs=engineering.cableFaultInputs||(engineering.cableFaultInputs={});
     const key=c.board+'|'+c.id, fault=Object.prototype.hasOwnProperty.call(faultInputs,key)?faultInputs[key]:'';
-    const result=calculateCableChecks({...settings,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
+    const result=calculateCableChecks({...settings,wireUnit:config.wireUnit,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
       voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,
       localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
       minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(c.mcb>=20?6:c.mcb>=15?4:c.mcb>=10?2.5:1.5):0,
@@ -143,7 +143,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
       '<td class="p-2">'+result.vDropPct.toFixed(2)+'% <small class="block text-slate-500">limit '+settings.maxVdrop+'%</small></td>'+
       '<td class="p-2">'+result.peMm2.toFixed(1)+' mm²</td>'+
       '<td class="p-2"><input aria-label="Fault current '+label+'" data-cable-fault="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(fault)+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
-      '<td class="p-2">'+escapeHTML(thermal)+'</td>'+
+      '<td class="p-2">'+escapeHTML(thermal)+'<small class="block text-slate-500">Breaking: '+escapeHTML(result.breakingCheck.status)+'</small></td>'+
       '<td class="p-2 text-amber-300 font-semibold">'+escapeHTML(result.status)+'</td></tr>';
   }).join('');
   body.querySelectorAll('[data-cable-fault]').forEach(el=>el.addEventListener('change',()=>{
@@ -152,10 +152,11 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     if(value)engineering.cableFaultInputs[el.dataset.cableFault]=value;else delete engineering.cableFaultInputs[el.dataset.cableFault];
     renderCableSizing();if(typeof saveProject==='function')saveProject();
   }));
-  notes.innerHTML='<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
+  notes.innerHTML='<p><b class="text-slate-200">Bangladesh residential minimums:</b> the Power Division guideline gives 1.5 mm² for 5 A, 2.5 mm² for 10 A, 4 mm² for 15 A and 6 mm² for 20 A protected circuits. The application applies the nearest lower threshold conservatively to larger standard breaker ratings (for example, 16 A maps to the 15 A minimum); review this policy against the actual adopted requirements.</p>' +
+  '<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
   '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Table C.52.1 simplified unburied reference dataset. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
   '<p><b class="text-slate-200">Voltage drop:</b> ΔU = (2 for 1φ, √3 for balanced 3φ) × I × L × (R cosφ + X sinφ); R is adjusted from 20°C using copper α20=0.00393/K. X defaults to 0.08 Ω/km unless manufacturer data is supplied.</p>'+
   '<p><b class="text-slate-200">Short-circuit withstand:</b> S ≥ I√t/k, with k=115 for Cu/PVC and 143 for Cu/XLPE; the selected table currently only enables PVC. Fault-current-at-cable must be entered at each circuit location. Breaking-capacity comparison is only at the entered common fault point.</p>'+
-  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. Only the 2-loaded-conductor PVC columns are enabled; 3-loaded-conductor, XLPE and aluminium selections are blocked rather than guessed. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
+  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. Only the 2-loaded-conductor PVC columns are enabled; 3-loaded-conductor, XLPE and aluminium selections are blocked rather than guessed. The IEC source table's flattened header does not preserve all conductor-count/insulation mappings reliably enough for automated use. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={calculateCableChecks};
