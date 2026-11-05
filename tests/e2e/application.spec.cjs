@@ -125,7 +125,7 @@ test('SLD uses navy drafting sheet and phase-specific feeder taps with separate 
   const svg = page.locator('#sldSvg');
   await expect(svg.locator('rect').first()).toHaveAttribute('fill', '#071426');
   const tips = await svg.locator('[data-tip]').evaluateAll(nodes => nodes.map(n => n.dataset.tip));
-  expect(tips.some(t => t.includes('Phase R feeder conductor from matching busbar to SDB-1'))).toBeTruthy();
+  expect(tips.some(t => t.includes('Phase R feeder conductor from MDB busbar to SDB-1'))).toBeTruthy();
   expect(tips.some(t => t.includes('Neutral (N) feeder conductor from neutral busbar to SDB-1'))).toBeTruthy();
   expect(tips.some(t => t.includes('Protective earth (PE) conductor from PE bar to SDB-1'))).toBeTruthy();
   expect(tips.some(t => t.includes('Phase R conductor physically tapped from matching busbar'))).toBeTruthy();
