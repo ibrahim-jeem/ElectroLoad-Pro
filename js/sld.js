@@ -154,6 +154,10 @@ function renderSLD(mainMccbRating, totalCurrent) {
         tip.setAttribute('role', 'tooltip');
         viewport.appendChild(tip);
     }
+    const background = document.createElementNS(NS, 'rect');
+    Object.entries({ x: 0, y: 0, width, height, fill: '#071426' }).forEach(([k,v]) => background.setAttribute(k,v));
+    background.setAttribute('pointer-events','none');
+    svg.appendChild(background);
     const group = document.createElementNS(NS, 'g');
     svg.appendChild(group);
     const colors = { R: '#ef4444', Y: '#fbbf24', B: '#60a5fa', N: '#cbd5e1', PE: '#22c55e' };
@@ -357,5 +361,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
         });
     }
     label('CONCEPTUAL SLD · VERIFY CABLE ROUTING, PROTECTION, FAULT LEVEL AND CODE COMPLIANCE BEFORE CONSTRUCTION', 16, height - 16, 10, '#fbbf24');
+    const tbx=width-320, tby=height-86;
+    const titleBlock=document.createElementNS(NS,'rect');
+    Object.entries({x:tbx,y:tby,width:300,height:64,rx:4,fill:'#0b1b32',stroke:'#64748b','stroke-width':1}).forEach(([k,v])=>titleBlock.setAttribute(k,v)); group.appendChild(titleBlock);
+    label('ELECTROLOAD PRO · SINGLE-LINE DIAGRAM',tbx+10,tby+17,10,'#f8fafc','start','700');
+    label('System: '+config.phase+' · '+(is3PSystem()?config.voltageLL:config.voltageLN)+' V · '+config.frequency+' Hz',tbx+10,tby+33,9,'#cbd5e1');
+    label('Convention: '+(engineering.sldConvention==='ANSI'?'ANSI/NEMA-inspired':'IEC-inspired')+' · Rev 0 · '+new Date().toISOString().slice(0,10),tbx+10,tby+49,9,'#cbd5e1');
     sldApplyView();
 }
