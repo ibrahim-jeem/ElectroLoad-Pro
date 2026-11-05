@@ -235,7 +235,9 @@ test('residential 2-ton AC sizing respects Bangladesh 15A circuit minimum cable 
 
 
 test('advanced engineering tools are collapsed by default and expand on demand', async ({ page }) => {
-  await page.locator('#advancedToggle').uncheck();
+  await page.reload();
+  await expect(page.locator('#advancedToggle')).not.toBeChecked();
+  await page.locator('#advancedToggle').check();
   await expect(page.locator('#advancedPanel')).toBeHidden();
   await page.locator('#advancedToggle').check();
   await expect(page.locator('#advancedPanel')).toBeVisible();
