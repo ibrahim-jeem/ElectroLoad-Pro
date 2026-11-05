@@ -129,6 +129,25 @@
     ];
     box.innerHTML=checks.map(([label,ok,hint])=>'<div class="flex items-start gap-2 rounded-lg border '+(ok?'border-emerald-800 bg-emerald-950/20':'border-slate-800 bg-slate-950/60')+' p-2"><span class="'+(ok?'text-emerald-400':'text-amber-300')+'">'+(ok?'✓':'!')+'</span><span><strong class="text-slate-200">'+label+'</strong><small class="block text-slate-500">'+(ok?'Recorded / passed in app':hint)+'</small></span></div>').join('');
   }
+  function hookSldTitleBlock() {
+    if(typeof window.renderSLD!=='function'||window.renderSLD.__titleBlockWrapped)return;
+    const original=window.renderSLD;
+    const wrapped=function(){const result=original.apply(this,arguments);const svg=$('sldSvg');if(!svg)return result;
+      svg.querySelector('[data-sld-title-block]')?.remove();
+      const w=Number(svg.dataset.baseWidth||1000),h=Number(svg.dataset.baseHeight||800),ns='http://www.w3.org/2000/svg';
+      const g=document.createElementNS(ns,'g');g.dataset.sldTitleBlock='1';
+      const rect=document.createElementNS(ns,'rect');[['x',w-340],['y',h-112],['width',320],['height',94],['rx',6],['fill','#0b1b32'],['stroke','#5b789d'],['stroke-width',1.5]].forEach(([k,v])=>rect.setAttribute(k,v));g.appendChild(rect);
+      const meta=projectMeta();
+      const lines=[
+        [meta.name||'UNTITLED PROJECT',w-326,h-87,15,'#f8fafc','700'],
+        ['CLIENT: '+(meta.client||'—'),w-326,h-67,10,'#cbd5e1','500'],
+        ['DRAWING: '+(meta.drawingNo||'ELP-SLD-001')+'   REV: '+(meta.revision||'A'),w-326,h-49,10,'#cbd5e1','500'],
+        ['PREPARED: '+(meta.designer||'—')+'   '+new Date().toISOString().slice(0,10),w-326,h-31,9,'#94a3b8','500']
+      ];
+      lines.forEach(([value,x,y,size,color,weight])=>{const t=document.createElementNS(ns,'text');[['x',x],['y',y],['font-size',size],['fill',color],['font-weight',weight]].forEach(([k,v])=>t.setAttribute(k,v));t.textContent=value;g.appendChild(t);});
+      svg.appendChild(g);return result;};
+    wrapped.__titleBlockWrapped=true;window.renderSLD=wrapped;
+  }
   function hookRecalculation() {
     if(typeof window.recalculateAll!=='function'||window.recalculateAll.__workspaceWrapped)return;
     const original=window.recalculateAll;
@@ -154,6 +173,7 @@
     $('projectSaveBtn')?.addEventListener('click',saveNamedProject);
     $('projectExportBtn')?.addEventListener('click',exportProjectJSON);
     $('projectImportInput')?.addEventListener('change',e=>{importProjectJSON(e.target.files?.[0]);e.target.value='';});
+    ['projectName','projectClient','projectLocation','projectDesigner','projectDrawingNo','projectRevision'].forEach(id=>$(id)?.addEventListener('change',()=>{if(activeProjectId!=='default')saveNamedProject();if(typeof window.renderSLD==='function')recalculateAll();}));
     $('projectNewBtn')?.addEventListener('click',()=>{
       if(!confirm('Start a new blank project? Export or save the current project first.'))return;
       activeProjectId='project-'+Date.now();
@@ -171,7 +191,7 @@
     const active=readProjects().find(p=>p.meta?.id===activeProjectId);
     if(active?.meta){[['projectName',active.meta.name],['projectClient',active.meta.client],['projectLocation',active.meta.location],['projectDesigner',active.meta.designer],['projectDrawingNo',active.meta.drawingNo],['projectRevision',active.meta.revision]].forEach(([id,v])=>{if($(id))$(id).value=v||'';});}
     if($('projectName')&&!$('projectName').value)$('projectName').value='Untitled Project';
-    hookRecalculation();recalculateAll();
+    hookSldTitleBlock();hookRecalculation();recalculateAll();
   }
   window.addEventListener('DOMContentLoaded',init);
   window.renderDBSchedule=renderDBSchedule;
