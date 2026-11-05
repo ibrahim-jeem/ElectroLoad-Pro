@@ -278,6 +278,12 @@ test('SLD contains a project drawing title block', async ({ page }) => {
   await page.locator('#projectName').press('Tab');
   await expect(page.locator('#sldSvg [data-sld-title-block]')).toHaveCount(1);
   await expect(page.locator('#sldSvg [data-sld-title-block]')).toContainText('Title Block QA');
+  const insideViewBox=await page.locator('#sldSvg').evaluate(svg=>{
+    const box=svg.querySelector('[data-sld-title-block]').getBBox();
+    const view=svg.viewBox.baseVal;
+    return box.x>=0&&box.y>=0&&box.x+box.width<=view.width&&box.y+box.height<=view.height;
+  });
+  expect(insideViewBox).toBeTruthy();
 });
 
 
