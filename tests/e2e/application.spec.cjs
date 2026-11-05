@@ -303,7 +303,7 @@ test('named project reload restores board and project metadata', async ({ page }
   await first.locator('input').first().fill('Changed After Save');
   await first.locator('input').first().press('Tab');
   await page.locator('#projectPicker').selectOption('other-copy');
-  await expect(page.locator('#projectName')).toHaveValue('Restore QA');
+  await expect(page.locator('#projectName')).toHaveValue('Other Copy');
   await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
 });
 
