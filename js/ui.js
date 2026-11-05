@@ -130,7 +130,7 @@ function renderFixtureTable() {
 function addNewFixtureRow() {
     const newId = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.id)) + 1 : 1;
     const board = boards[0].id;
-    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, currentFactor:1, demandFactor:1, distance: 15, phase: 'R' });
+    fixtures.push({ id: newId, name: 'New Circuit Load', room: 'General', board: board, sup: 1, ckt: grouping.auto ? '' : nextCktName(board), category: 'Lighting', qty: 1, watts: 100, pf: 0.95, demandFactor:1, distance: 15, phase: 'R' });
     renderFixtureTable();
     recalculateAll();
 }
@@ -175,7 +175,7 @@ function addPresetItem(name, category, watts, pf, sup = 1) {
     const phases = ['R', 'Y', 'B'];
     const assignedPhase = phases[fixtures.length % 3];
 
-    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, currentFactor:defaultCurrentFactor({name,category,watts}), demandFactor:1, distance: 20, phase: assignedPhase });
+    fixtures.push({ id: newId, name: name, room: 'General', board: board, sup: sup, ckt: grouping.auto ? '' : nextCktName(board), category: category, qty: 1, watts: watts, pf: pf, demandFactor:1, distance: 20, phase: assignedPhase });
     closePresetModal();
     renderFixtureTable();
     recalculateAll();
