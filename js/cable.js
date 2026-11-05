@@ -84,9 +84,9 @@ function calculateCableChecks(input) {
 }
 function cableInputValue(id,fallback){const el=document.getElementById(id);return el?el.value:fallback;}
 function initCableSizingUI(){
-  const ids=['cableMaxVdrop','cableInsulation','cableTripTime','cableMethod','cableConductors','cableAmbientFactor','cableGroupingFactor','cableTemp','cablePowerFactor','cableMaterial','cableReactance','cableFaultLevel','cableBreakingCapacity'];
+  const ids=['cableMaxVdrop','cableInsulation','cableTripTime','cableMethod','cableAmbientFactor','cableGroupingFactor','cableTemp','cablePowerFactor','cableMaterial','cableReactance','cableFaultLevel','cableBreakingCapacity'];
   const values={cableMaxVdrop:engineering.cableMaxVdrop??2.5,cableInsulation:engineering.cableInsulation||'PVC',cableTripTime:engineering.cableTripTime??0.4,
-    cableMethod:engineering.cableMethod||'B2',cableConductors:engineering.cableConductors||'2',
+    cableMethod:engineering.cableMethod||'B2',
     cableAmbientFactor:engineering.cableAmbientFactor??1,cableGroupingFactor:engineering.cableGroupingFactor??1,
     cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??0.9,cableMaterial:engineering.cableMaterial||'Cu',
     cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
@@ -97,7 +97,7 @@ function persistCableSettings(){
   const read=id=>document.getElementById(id)?.value;
   engineering.cableMaxVdrop=n(read('cableMaxVdrop')); engineering.cableInsulation=read('cableInsulation');
   engineering.cableTripTime=n(read('cableTripTime')); engineering.cableMethod=read('cableMethod');
-  engineering.cableConductors=read('cableConductors'); engineering.cableAmbientFactor=n(read('cableAmbientFactor'));
+ engineering.cableAmbientFactor=n(read('cableAmbientFactor'));
   engineering.cableGroupingFactor=n(read('cableGroupingFactor')); engineering.cableTemp=n(read('cableTemp'));
   engineering.cablePowerFactor=n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
   engineering.cableReactance=n(read('cableReactance')); engineering.cableFaultLevel=read('cableFaultLevel');
@@ -109,7 +109,7 @@ function renderCableSizing(){
   if(!body||!summary||!notes||typeof circuits==='undefined')return;
   const settings={maxVdrop:n(cableInputValue('cableMaxVdrop',2.5)),insulation:cableInputValue('cableInsulation','PVC'),
     tripTime:n(cableInputValue('cableTripTime',0.4)),installationMethod:cableInputValue('cableMethod','B2'),
-    loadedConductors:n(cableInputValue('cableConductors','2')),ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
+ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     groupingFactor:n(cableInputValue('cableGroupingFactor',1)),conductorTempC:n(cableInputValue('cableTemp',70)),
     powerFactor:n(cableInputValue('cablePowerFactor',0.9)),material:cableInputValue('cableMaterial','Cu'),
     reactanceOhmKm:n(cableInputValue('cableReactance',0.08)),faultCurrentAtPointKA:cableInputValue('cableFaultLevel',''),
