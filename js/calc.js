@@ -51,14 +51,16 @@ function recalculateAll() {
         const mcbRating = selectBreakerRating(requiredBreakerRating);
         ckt.mcb = mcbRating;
 
-        // Trip Curve Suggestion
-        let curve = 'Type C';
-        if ([...ckt.categories].every(c => c === 'Lighting')) curve = 'Type B';
-        if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
+        // A trip curve cannot be selected safely from broad load labels alone.
+        // Inrush, minimum fault current, disconnection time and device curves are not modelled.
+        const curve = 'ENGINEER REVIEW';
 
         // Cable selection now uses the V2 reference-table engine; the legacy generic ampacity table is not used.
         const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
             Math.max(ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
+        const circuitKey = ckt.board + '|' + ckt.id;
+        const circuitFaultKA = (engineering.cableFaultInputs || {})[circuitKey] ?? '';
+        const circuitProtection = (engineering.cableProtectionInputs || {})[circuitKey] || {};
         const cableResult = mcbRating === null ? {valid:false,message:'Protective device is not sized.'} : calculateCableChecks({
             designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance, wireUnit:config.wireUnit,
             voltage:ckt.sup===3?config.voltageLL:config.voltageLN, phases:ckt.sup===3?3:1,
@@ -69,8 +71,8 @@ function recalculateAll() {
             groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
             conductorTempC:Number(engineering.cableTemp ?? 70), powerFactor:Number(engineering.cablePowerFactor||circuitPf),
             reactanceOhmKm:Number(engineering.cableReactance ?? 0.08),
-            faultCurrentKA:(engineering.cableFaultInputs||{})[ckt.board+'|'+ckt.id] ?? '',
-            faultCurrentAtPointKA:engineering.cableFaultLevel, breakingCapacityKA:engineering.cableBreakingCapacity,
+            faultCurrentKA:circuitFaultKA,
+            faultCurrentAtPointKA:circuitFaultKA, breakingCapacityKA:circuitProtection.breakingCapacityKA || '',
             tripTime:Number(engineering.cableTripTime ?? 0.4),
             localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
             minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(mcbRating>=20?6:mcbRating>=15?4:mcbRating>=10?2.5:1.5):0
@@ -92,6 +94,9 @@ function recalculateAll() {
         const vDropPct = cableResult.vDropPct;
         const vDropLimit = Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3));
         const isVdropWarning = !cableResult.voltageDropPass;
+        const isEngineeringFail = !cableResult.coordination || isVdropWarning ||
+            cableResult.thermal?.status?.startsWith('FAIL') || cableResult.thermal?.status === 'INVALID INPUT' ||
+            cableResult.breakingCheck?.status?.startsWith('FAIL');
         ckt.vDropPct = vDropPct;
 
         // Add to calculated UI schedule table
@@ -109,8 +114,10 @@ function recalculateAll() {
             <td class="py-2.5 px-3 ${isVdropWarning ? 'text-red-400 font-bold' : 'text-slate-300'}">${vDropPct.toFixed(2)}%</td>
             <td class="py-2.5 px-3 text-center">
                 ${isVdropWarning 
-                    ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] border border-red-500/30">V-DROP &gt; 3%</span>' 
-                    : '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px]">PASS</span>'}
+                    ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] border border-red-500/30">V-DROP &gt; ' + vDropLimit.toFixed(2) + '%</span>' 
+                    : isEngineeringFail
+                        ? '<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] border border-red-500/30">REVIEW / FAIL</span>'
+                        : '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] border border-amber-500/30">INCOMPLETE — REVIEW</span>'}
             </td>
         `;
         calcBody.appendChild(tr);
@@ -140,7 +147,12 @@ function recalculateAll() {
     const maxI = Math.max(...currents);
     const minI = Math.min(...currents);
     const avgI = (phaseAmps.R + phaseAmps.Y + phaseAmps.B) / 3 || 1;
-    const pctUnbalance = (avgI > 0 && is3PSystem()) ? ((maxI - minI) / avgI) * 100 : 0;
+    const maxPhaseDeviation = Math.max(
+        Math.abs(phaseAmps.R - avgI),
+        Math.abs(phaseAmps.Y - avgI),
+        Math.abs(phaseAmps.B - avgI)
+    );
+    const pctUnbalance = (avgI > 0 && is3PSystem()) ? (maxPhaseDeviation / avgI) * 100 : 0;
 
     // Neutral Current Estimate: sqrt(Ir^2 + Iy^2 + Ib^2 - Ir*Iy - Iy*Ib - Ib*Ir)
     const Ir = phaseAmps.R, Iy = phaseAmps.Y, Ib = phaseAmps.B;
@@ -157,13 +169,13 @@ function recalculateAll() {
     const badge = document.getElementById('imbalanceBadge');
     if (pctUnbalance <= 5.0) {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
-        badge.innerText = "BALANCED";
+        badge.innerText = "LOW";
     } else if (pctUnbalance <= 12.0) {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400";
         badge.innerText = "MODERATE";
     } else {
         badge.className = "text-xs font-semibold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400";
-        badge.innerText = "HIGH UNBALANCE";
+        badge.innerText = "HIGH";
     }
 
     // Update Busbar Visuals

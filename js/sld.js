@@ -119,7 +119,7 @@ function renderSLD(mainMccbRating, totalCurrent) {
     place(root, 0);
     const depth = Math.max(0, ...[...positions.values()].map(p => p.depth));
     const width = Math.max(1000, margin * 2 + Math.max(0, leaf - 1) * step);
-    const height = 250 + (depth + 1) * 300;
+    const height = 250 + (depth + 1) * 300 + 120; // reserve a clear drawing-title-block band
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
     svg.dataset.baseWidth = width;
@@ -219,11 +219,11 @@ function renderSLD(mainMccbRating, totalCurrent) {
         group.appendChild(el);
         return el;
     };
-    const label = (value, x, y, size = 12, color = '#334155', anchor = 'start', weight = '400') => {
+    const label = (value, x, y, size = 12, color = '#334155', anchor = 'start', weight = '400', target = group) => {
         const el = document.createElementNS(NS, 'text');
         Object.entries({ x, y, 'font-size': size, fill: color, 'text-anchor': anchor, 'font-weight': weight }).forEach(([k, v]) => el.setAttribute(k, v));
         el.textContent = String(value ?? '');
-        group.appendChild(el);
+        target.appendChild(el);
         return el;
     };
     const card = (x, y, w, h, heading, sub, detail, accent = '#2563eb') => {
@@ -366,11 +366,18 @@ function renderSLD(mainMccbRating, totalCurrent) {
         });
     }
     label('CONCEPTUAL SLD · VERIFY CABLE ROUTING, PROTECTION, FAULT LEVEL AND CODE COMPLIANCE BEFORE CONSTRUCTION', 16, height - 16, 10, '#fbbf24');
-    const tbx=width-320, tby=height-86;
+    const tbx=width-340, tby=height-112;
+    const titleBlockGroup=document.createElementNS(NS,'g');
+    titleBlockGroup.dataset.sldTitleBlock='1';
     const titleBlock=document.createElementNS(NS,'rect');
-    Object.entries({x:tbx,y:tby,width:300,height:64,rx:4,fill:'#0b1b32',stroke:'#64748b','stroke-width':1}).forEach(([k,v])=>titleBlock.setAttribute(k,v)); group.appendChild(titleBlock);
-    label('ELECTROLOAD PRO · SINGLE-LINE DIAGRAM',tbx+10,tby+17,10,'#f8fafc','start','700');
-    label('System: '+config.phase+' · '+(is3PSystem()?config.voltageLL:config.voltageLN)+' V · '+config.frequency+' Hz',tbx+10,tby+33,9,'#cbd5e1');
-    label('Convention: '+(engineering.sldConvention==='ANSI'?'ANSI/NEMA-inspired':'IEC-inspired')+' · Rev 0 · '+new Date().toISOString().slice(0,10),tbx+10,tby+49,9,'#cbd5e1');
+    Object.entries({x:tbx,y:tby,width:320,height:94,rx:4,fill:'#0b1b32',stroke:'#64748b','stroke-width':1}).forEach(([k,v])=>titleBlock.setAttribute(k,v));
+    titleBlockGroup.appendChild(titleBlock);
+    const metaValue=id=>document.getElementById(id)?.value?.trim()||'—';
+    label('ELECTROLOAD PRO · '+(metaValue('projectName')==='—'?'PROJECT':metaValue('projectName')),tbx+10,tby+18,11,'#f8fafc','start','700',titleBlockGroup);
+    label('CLIENT: '+metaValue('projectClient'),tbx+10,tby+37,9,'#cbd5e1','start','400',titleBlockGroup);
+    label('DRAWING: '+metaValue('projectDrawingNo')+' · REV '+(metaValue('projectRevision')==='—'?'A':metaValue('projectRevision')),tbx+10,tby+55,9,'#cbd5e1','start','400',titleBlockGroup);
+    label('PREPARED: '+metaValue('projectDesigner'),tbx+10,tby+73,9,'#cbd5e1','start','400',titleBlockGroup);
+    label('SYSTEM: '+config.phase+' · '+(is3PSystem()?config.voltageLL:config.voltageLN)+' V · '+config.frequency+' Hz · '+new Date().toISOString().slice(0,10),tbx+10,tby+88,8,'#94a3b8','start','400',titleBlockGroup);
+    group.appendChild(titleBlockGroup);
     sldApplyView();
 }

@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.locator('#boardTableBody tr')).toHaveCount(3);
+  await page.locator('#advancedToggle').check();
 });
 
 test('one-phase bathroom board can be parented to one-phase bedroom switchboard', async ({ page }) => {
@@ -162,8 +163,8 @@ test('per-circuit fault current triggers the adiabatic thermal check', async ({ 
   await fault.fill('1');
   await fault.press('Tab');
   const firstRow = page.locator('#cableSizingBody tr').first();
-  await expect(firstRow.locator('td').nth(7)).toContainText('FAIL');
-  await expect(firstRow.locator('td').nth(8)).toContainText('REVIEW / FAIL');
+  await expect(firstRow.locator('td').nth(8)).toContainText('FAIL');
+  await expect(firstRow.locator('td').nth(9)).toContainText('REVIEW / FAIL');
 });
 
 test('cable sizing settings and circuit fault inputs persist after reload', async ({ page }) => {
@@ -176,16 +177,22 @@ test('cable sizing settings and circuit fault inputs persist after reload', asyn
   const key = await fault.getAttribute('data-cable-fault');
   await fault.fill('0.25');
   await fault.press('Tab');
+  const icu=page.locator('#cableSizingBody [data-cable-icu]').first();
+  await icu.fill('6');
+  await icu.press('Tab');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
   expect(saved.engineering.cableMaxVdrop).toBe(2.5);
   expect(saved.engineering.cableInsulation).toBe('PVC');
   expect(saved.engineering.cableTripTime).toBe(0.2);
   expect(saved.engineering.cableFaultInputs[key]).toBe('0.25');
+  expect(saved.engineering.cableProtectionInputs[key].breakingCapacityKA).toBe('6');
   await page.reload();
   await expect(page.locator('#cableMaxVdrop')).toHaveValue('2.5');
   await expect(page.locator('#cableInsulation')).toHaveValue('PVC');
   await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
   await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
+  await expect(page.locator('#cableSizingBody [data-cable-icu]').first()).toHaveValue('6');
+  await expect(page.locator('#cableSizingBody [data-cable-icu]').first()).toHaveValue('6');
 });
 
 test('project category and additional distribution board types are available and persist', async ({ page }) => {
@@ -193,6 +200,7 @@ test('project category and additional distribution board types are available and
   await expect(page.locator('#projectTypeNote')).toContainText('motor starting');
   await page.locator('#projectTypeSelect').selectOption('Commercial');
   await page.reload();
+  await page.locator('#advancedToggle').check();
   await expect(page.locator('#projectTypeSelect')).toHaveValue('Commercial');
   await page.locator('#boardTableBody tr').nth(1).locator('select').first().selectOption({ label: 'FDB' });
   await expect(page.locator('#boardTableBody tr').nth(1).locator('select').first()).toHaveValue('FDB');
@@ -230,4 +238,159 @@ test('residential 2-ton AC sizing respects Bangladesh 15A circuit minimum cable 
   expect(result.breaker).toBe(16);
   expect(result.valid).toBeTruthy();
   expect(result.cable).toBe(4);
+});
+
+
+test('advanced engineering tools are collapsed by default and expand on demand', async ({ page }) => {
+  await page.reload();
+  await expect(page.locator('#advancedToggle')).not.toBeChecked();
+  await expect(page.locator('#advancedPanel')).toBeHidden();
+  await page.locator('#advancedToggle').check();
+  await expect(page.locator('#advancedPanel')).toBeVisible();
+  await expect(page.locator('#cableSizingSection')).toBeVisible();
+  await expect(page.locator('#boardHierarchySection')).toBeVisible();
+});
+
+test('distribution board schedule mirrors board and circuit calculations', async ({ page }) => {
+  await expect(page.locator('#dbScheduleBody tr').first()).toBeVisible();
+  await expect(page.locator('#dbScheduleCount')).toContainText('boards');
+  await expect(page.locator('#dbScheduleBody')).toContainText('MDB');
+  await expect(page.locator('#dbScheduleBody')).toContainText('CKT-');
+});
+
+test('project management saves, reloads and exports named project data', async ({ page }) => {
+  await page.locator('#projectName').fill('QA Demo Project');
+  await page.locator('#projectClient').fill('ElectroLoad QA');
+  await page.locator('#projectLocation').fill('Dhaka');
+  await page.locator('#projectSaveBtn').click();
+  await expect(page.locator('#projectPicker')).toContainText('QA Demo Project');
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]'));
+  expect(saved[0].meta.name).toBe('QA Demo Project');
+  expect(saved[0].project.fixtures.length).toBeGreaterThan(0);
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#projectExportBtn').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toContain('.elpro.json');
+});
+
+test('SLD contains a project drawing title block', async ({ page }) => {
+  await page.locator('#projectName').fill('Title Block QA');
+  await page.locator('#projectName').press('Tab');
+  await expect(page.locator('#sldSvg [data-sld-title-block]')).toHaveCount(1);
+  await expect(page.locator('#sldSvg [data-sld-title-block]')).toContainText('Title Block QA');
+  const insideViewBox=await page.locator('#sldSvg').evaluate(svg=>{
+    const box=svg.querySelector('[data-sld-title-block]').getBBox();
+    const view=svg.viewBox.baseVal;
+    return box.x>=0&&box.y>=0&&box.x+box.width<=view.width&&box.y+box.height<=view.height;
+  });
+  expect(insideViewBox).toBeTruthy();
+});
+
+
+test('named project reload restores board and project metadata', async ({ page }) => {
+  await page.locator('#projectName').fill('Restore QA');
+  await page.locator('#projectSaveBtn').click();
+  await page.evaluate(()=>{
+    const projects=JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]');
+    const copy=JSON.parse(JSON.stringify(projects.find(p=>p.meta.id==='default')));
+    copy.meta.id='other-copy';copy.meta.name='Other Copy';projects.push(copy);
+    localStorage.setItem('elpro_projects_v1',JSON.stringify(projects));
+  });
+  await page.reload();
+  await page.locator('#advancedToggle').check();
+  const first=page.locator('#boardTableBody tr').first();
+  const original=await first.locator('input').first().inputValue();
+  await first.locator('input').first().fill('Changed After Save');
+  await first.locator('input').first().press('Tab');
+  await page.locator('#projectPicker').selectOption('other-copy');
+  await expect(page.locator('#projectName')).toHaveValue('Other Copy');
+  await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
+});
+
+test('Excel export contains Project Info and detailed DB Schedule worksheets', async ({ page }) => {
+  const names=await page.evaluate(()=>{
+    window.__exportSheets=null;
+    XLSX.writeFile=(workbook)=>{window.__exportSheets=workbook.SheetNames.slice();};
+    exportToExcel();
+    return window.__exportSheets;
+  });
+  expect(names).toContain('DB Schedule');
+  expect(names).toContain('Project Info');
+  expect(names).toContain('Cable Verification');
+});
+
+
+test('breaker breaking capacity is verified per circuit against that circuit fault level', async ({ page }) => {
+  const fault=page.locator('#cableSizingBody [data-cable-fault]').first();
+  const icu=page.locator('#cableSizingBody [data-cable-icu]').first();
+  await fault.fill('1.5');
+  await fault.press('Tab');
+  await icu.fill('1');
+  await icu.press('Tab');
+  const row=page.locator('#cableSizingBody tr').first();
+  await expect(row.locator('td').nth(8)).toContainText('FAIL — BREAKING CAPACITY');
+  await expect(row.locator('td').nth(9)).toContainText('REVIEW / FAIL');
+});
+
+
+test('project JSON import restores a validated saved project snapshot', async ({ page }) => {
+  await page.locator('#projectName').fill('Import Roundtrip QA');
+  await page.locator('#projectSaveBtn').click();
+  const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]')[0]);
+  const first=page.locator('#boardTableBody tr').first().locator('input').first();
+  const original=await first.inputValue();
+  await first.fill('Mutated Board');
+  await first.press('Tab');
+  await page.locator('#projectImportInput').setInputFiles({
+    name:'import-roundtrip.elpro.json',
+    mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify(snapshot))
+  });
+  await expect(page.locator('#projectName')).toHaveValue('Import Roundtrip QA');
+  await expect(page.locator('#boardTableBody tr').first().locator('input').first()).toHaveValue(original);
+  await expect(page.locator('#projectManagerStatus')).toContainText('imported');
+});
+
+
+test('release layout keeps project basis compact and phase meters on one row', async ({ page }) => {
+  const basisWidth = await page.locator('#projectDesignBasis').evaluate(el => el.getBoundingClientRect().width);
+  expect(basisWidth).toBeLessThan(600);
+  const boxes = await Promise.all(['#phaseR_stats','#phaseY_stats','#phaseB_stats'].map(selector =>
+    page.locator(selector).evaluate(el => {
+      const card = el.parentElement.parentElement;
+      const rect = card.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, right: rect.right };
+    })
+  ));
+  expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0);
+  expect(boxes[1].y).toBeCloseTo(boxes[2].y, 0);
+  expect(boxes[0].x).toBeLessThan(boxes[1].x);
+  expect(boxes[1].x).toBeLessThan(boxes[2].x);
+});
+
+test('readiness checklist rejects an MDB breaker below the entered prospective fault level', async ({ page }) => {
+  await page.locator('#sourceFaultKA').fill('25');
+  await page.locator('#sourceFaultKA').press('Tab');
+  await page.locator('#mainBreakerIcuKA').fill('16');
+  await page.locator('#mainBreakerIcuKA').press('Tab');
+  const check = page.locator('#projectReadinessChecks > div').filter({ hasText: 'MDB fault / Icu comparison' });
+  await expect(check).toContainText('FAIL');
+  await expect(check).not.toContainText('Input / screening check passed');
+});
+
+
+test('advanced toggle contains circuit grouping and breaker margin controls', async ({ page }) => {
+  // beforeEach opens advanced tools for the rest of the engineering E2E suite.
+  await page.locator('#advancedToggle').uncheck();
+  await expect(page.locator('#groupingControls')).toBeAttached();
+  await expect(page.locator('#breakerMarginControl')).toBeAttached();
+  await expect(page.locator('#groupingControls')).toBeHidden();
+  await expect(page.locator('#breakerMarginControl')).toBeHidden();
+  await page.locator('#advancedToggle').check();
+  await expect(page.locator('#groupingControls')).toBeVisible();
+  await expect(page.locator('#breakerMarginControl')).toBeVisible();
+});
+
+test('breaker curve is not guessed from load category', async ({ page }) => {
+  await expect(page.locator('#calculatedScheduleBody')).toContainText('ENGINEER REVIEW');
 });

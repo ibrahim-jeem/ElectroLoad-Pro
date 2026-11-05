@@ -1,64 +1,105 @@
 # ElectroLoad Pro
 
-Electrical load calculator and single line diagram generator: fixtures, rooms, circuit grouping, distribution boards (MDB / SDB / SB / FDB / RDB), 1-phase / 3-phase loads, breaker and wire sizing, phase balancing, SLD and Excel export.
+Electrical design-assistance workspace for preliminary load schedules, circuit grouping, distribution-board hierarchy, cable screening, phase balancing, and conceptual single-line diagrams.
 
-Static site: no server and no build step needed to run it. Open `index.html`, or host it on GitHub Pages.
+> **Engineering boundary:** ElectroLoad Pro is not a compliance certificate or a substitute for an electrical design engineer. Every result depends on the entered project data and the explicitly supported calculation scope.
 
-## Host on GitHub Pages
-1. Create a repository and upload everything in this folder (keep the folder structure).
-2. **Settings > Pages > Build and deployment**: Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)`.
-3. The site is live at `https://<username>.github.io/<repository>/` after a minute.
+## Run the application
 
-An internet connection is needed for three external items: Font Awesome icons, Google Fonts and the SheetJS library (Excel export).
+This is a static web application. No backend or build step is required to run it locally:
 
-## Files
-| File | What it does |
+1. Download or clone the repository.
+2. Keep the existing folder structure.
+3. Open `index.html` in a modern browser.
+
+For a hosted version, configure GitHub Pages under **Settings → Pages → Deploy from a branch → main → /(root)** after the reviewed changes are merged.
+
+Font Awesome, Google Fonts and SheetJS (Excel export) are loaded from external CDNs, so those features require an internet connection.
+
+## Main workflow
+
+1. **Project Design Basis** — choose Residential, Commercial or Industrial. This is project context; it does not apply undocumented category-wide demand factors.
+2. **Project Workspace** — enter project/client/site/drawing metadata, create and save named projects in this browser, reopen them, or import/export portable `.elpro.json` files.
+3. **System Parameters** — set adopted reference standard, supply phase/voltage, frequency and conductor unit.
+4. **Load Schedule** — add fixtures or presets, edit quantities, watts, PF, distance, board, phase, current multiplier and demand factor.
+5. **Live Phase Monitor** — review R/Y/B loading and run auto-balancing.
+6. **Calculated Circuit Schedule** — review preliminary circuit current, breaker, cable, PE and voltage-drop screening.
+7. **Distribution Board Schedule** — review board-wise outgoing circuits and feeder summaries; export the DB schedule and project metadata to Excel.
+8. **Single-Line Diagram** — inspect the navy drafting canvas, pan/zoom, use the delegated hover details, print A3 or export SVG.
+
+## Advanced Engineering toggle
+
+Advanced controls are collapsed by default. Open **Advanced Engineering** to access:
+
+- Auto circuit grouping, room consolidation and room strategy.
+- Additional breaker margin.
+- Distribution-board hierarchy (MDB, FDB, DB, BDB, SDB, SB and RDB).
+- Detailed cable-sizing settings and per-circuit fault-current / breaker breaking-capacity inputs.
+- SLD drawing convention and MDB fault-current inputs.
+
+The advanced panel does not change the underlying project data merely by being opened or closed.
+
+## Cable screening scope
+
+The enabled reference profile is intentionally narrow:
+
+- IEC 60364-5-52 Annex B Tables B.52.2 and B.52.4.
+- Copper, PVC, 70°C conductor, reference ambient 30°C in air.
+- 2 loaded conductors for single-phase and 3 loaded conductors for three-phase.
+- Installation reference methods A1, A2, B1, B2 and C.
+- Engineer-entered ambient/grouping correction factors.
+- (I_b \le I_n \le I_z), PF-aware R/X voltage-drop screening, phase/neutral equality, simplified PE sizing and entered-data adiabatic / breaker-capacity checks.
+- Copper voltage-drop resistance uses IEC 60228 Class 2 maximum DC resistance at 20°C, adjusted to the entered conductor temperature.
+
+Unsupported combinations are blocked rather than guessed. XLPE, aluminium, AWG/NEC ampacity, buried D1/D2 and free-air E/F/G are not enabled in this profile.
+
+The Bangladesh Power Division residential wiring guideline is applied only in the BNBC / Residential profile and only within its stated residential scope. Its 1.65 current multiplier is scoped to relevant fluorescent lamps, fans and small inductive loads up to 1 kW; per-load demand factors remain explicit engineer inputs. The residential 2.5% voltage-drop guideline and minimum conductor / ECC rules are not automatically generalized to commercial or industrial projects.
+
+## Explicit limitations — engineer verification required
+
+The application does **not** calculate or certify:
+
+- Full BNBC / BDS IEC / IEC / NEC compliance.
+- Downstream minimum/maximum short-circuit current or complete fault-level studies.
+- Earth-fault loop impedance, ADS, touch voltage, electrode performance or disconnection time.
+- Manufacturer time-current curves, selectivity/discrimination, backup protection or arc-flash.
+- Harmonic neutral loading, motor starting/transients, parallel cables, solar/soil thermal effects or complete IEC 60287 thermal calculations.
+- Manufacturer-specific cable construction, terminal temperature limits or installation correction factors unless supplied and verified by the engineer.
+
+The breaker curve is intentionally not guessed from broad load categories. Select it using actual inrush, minimum fault current, disconnection-time requirements and the selected device manufacturer's data.
+
+## Project data and privacy
+
+Named projects and autosave are stored in the current browser's `localStorage`; they are not synchronized to a server. Export a project backup before clearing browser data or changing devices. Imported project files are validated for the supported project structure and board hierarchy.
+
+## Development and QA
+
+- `npm test` — Node regression tests for the cable engine.
+- GitHub Actions — JavaScript quality checks, Node regression tests and Playwright browser E2E tests.
+- Keep classic-script load order in `index.html`; the application scripts share a global scope.
+
+## Key files
+
+| File | Responsibility |
 |---|---|
-| `index.html` | Page layout and modals |
-| `css/tailwind.css` | Compiled Tailwind utilities (generated, do not edit by hand) |
-| `css/style.css` | Your own styles: fonts, scrollbars, print rules |
-| `js/data.js` | Default project, fixture library, wire and breaker tables, grouping limits |
-| `js/engine.js` | Circuit grouping (auto / manual) and board roll-up with phase balancing |
-| `js/ui.js` | Tables, toggles, edit handlers for fixtures, boards and the library |
-| `js/calc.js` | Schedule, totals, KPIs, busbar bars, auto-balance |
-| `js/sld.js` | Single line diagram (SVG) |
-| `js/export.js` | Excel export and SVG download |
-| `js/app.js` | Startup, modals, reset |
+| `index.html` | Main UI, schedules, modals and SLD layout |
+| `css/style.css` | Custom visual styling, responsive layout and print rules |
+| `js/data.js` | Defaults, fixture library, breaker / wire tables |
+| `js/engine.js` | Input validation, circuit grouping, board roll-up and phase allocation |
+| `js/ui.js` | Fixture / board controls and table rendering |
+| `js/calc.js` | Core calculations, KPIs, phase monitor and engineering status |
+| `js/cable.js` | Cable reference tables and verification screening |
+| `js/sld.js` | Interactive SVG single-line diagram and navigation |
+| `js/export.js` | Excel workbook and SVG export |
+| `js/project-workspace.js` | Project management, DB schedule, readiness checks and SLD title block |
+| `docs/CABLE_SIZING_V2.md` | Cable sizing basis, references and limitations |
 
-The JS files are classic scripts sharing one scope. Keep the order of the `<script>` tags in `index.html`.
+## Primary references
 
-## Changing things by hand
-- **Standards and defaults**: edit `js/data.js` (`METRIC_WIRE_TABLE`, `AWG_WIRE_TABLE`, `STANDARD_BREAKER_RATINGS`, `LOW_POWER_W`, `COMBINED_MAX_MCB`, sample fixtures and boards).
-- **Calculation rules**: `js/calc.js` (schedule, voltage drop, demand factors) and `js/engine.js` (grouping and balancing).
-- **Diagram**: `js/sld.js`. **Excel columns**: `js/export.js`.
-- **Look and feel**: use Tailwind classes in `index.html` / the JS templates. If you use a class that is not already in the project, rebuild the CSS once:
-  ```
-  npm install
-  npm run build:css
-  ```
-  This regenerates `css/tailwind.css` by scanning `index.html` and `js/*.js`. Commit the new file.
-- The fixture library you edit in the app is stored in your browser (localStorage), not in the repository.
+1. Bangladesh Power Division, *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories* — [official PDF](https://objectstorage.ap-dcc-gazipur-1.oraclecloud15.com/n/axvjbnqprylg/b/V2Ministry/o/office-powerdivision/2024/12/21a05b2a89f94341bd7a9f0f68d28604.pdf).
+2. Bangladesh National Building Code 2020 — [HBRI official page](https://hbri.gov.bd/pages/static-pages/6922e02d933eb65569e25da9).
+3. IEC 60364-5-52, Annex B — [IEC Webstore publication](https://webstore.iec.ch/en/publication/103734).
+4. IEC 60228:2023 — [IEC Webstore publication](https://webstore.iec.ch/en/publication/71891).
+5. Schneider Electric, *Electrical Installation Guide* — [cable sizing](https://www.electrical-installation.org/enwiki/Recommended_simplified_approach_for_cable_sizing) and [voltage drop](https://www.electrical-installation.org/enwiki/Calculation_of_voltage_drop_in_steady_load_conditions).
 
-## Important
-Ampacity values, demand factors, power factors and fixture wattages are placeholders. Verify them against BNBC, NFPA/NEC and IEC before using results in a real design.
-
-
-## SLD engineering controls (screening only)
-
-The SLD supports a navy drafting canvas, cursor-centred wheel zoom, drag-to-pan, a single delegated hover tooltip, phase-aware R/Y/B feeder taps, separate neutral (N) and protective-earth (PE) conductors, IEC-inspired / ANSI-NEMA-inspired illustrative breaker notation, SVG export, and A3 landscape print styling.
-
-The engineering input panel records:
-- Drawing convention and IEC installation reference method (A1/A2/B1/B2/C/E/F/D1/D2).
-- User-entered ambient and grouping correction factors. These multiply the generic ampacity lookup values; they do **not** replace the cable-specific ampacity tables required for the selected conductor, insulation, installation method, ambient temperature, grouping and harmonics.
-- Prospective fault current at the MDB and the main breaker Icu/Icn from verified utility / study and manufacturer data. The app performs only a direct entered-value comparison at the MDB.
-
-### Explicit engineering limitations
-
-- Cable voltage drop is a resistance-only estimate using the embedded lookup table. It does not fully model conductor operating temperature, AC reactance, harmonics, parallel conductors or detailed cable construction.
-- Downstream short-circuit levels are **not calculated**. A valid calculation needs verified source impedance, transformer data, feeder length and R/X data, network configuration and fault assumptions.
-- Protection selectivity / discrimination is **not verified**. It requires actual device model numbers, trip-unit settings, time-current curves and manufacturer-tested coordination tables.
-- Earthing / automatic disconnection compliance is **not verified**. The SLD depicts separate N and PE paths but does not calculate earth-fault loop impedance, touch voltage, disconnection time, electrode performance or protective-conductor thermal withstand.
-- IEC-inspired and ANSI/NEMA-inspired drawing modes are illustrative conventions, not a licensed or certified reproduction of IEC 60617 / IEEE / ANSI symbol databases.
-- A3 output is a print layout; it is not a certified construction drawing or a substitute for an engineer-reviewed title block, revision process and project-specific legend.
-
-Never use the displayed estimates as construction instructions without review by a qualified electrical design engineer and verification against the adopted edition of BNBC / IEC / NEC and the actual equipment manufacturers.
+Always verify the adopted edition, actual installation conditions, manufacturer data and authority requirements before construction.

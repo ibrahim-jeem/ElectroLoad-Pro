@@ -215,6 +215,13 @@ function removeBoard(id) {
     recalculateAll();
 }
 
+function boardFeederPowerFactor(board) {
+    const loads=circuits.filter(c=>c.board===board.id||isDescendant(boardOf(c.board),board)).flatMap(c=>c.items);
+    const real=loads.reduce((sum,f)=>sum+Number(f.qty)*Number(f.watts),0);
+    const apparent=loads.reduce((sum,f)=>sum+(Number(f.qty)*Number(f.watts))/Math.max(Number(f.pf)||0.01,0.01),0);
+    return apparent>0?Math.min(1,real/apparent):0.9;
+}
+
 function renderBoardTable() {
     const tb = document.getElementById('boardTableBody');
     tb.innerHTML = '';
@@ -230,7 +237,7 @@ function renderBoardTable() {
             material:engineering.cableMaterial||'Cu', insulation:engineering.cableInsulation||'PVC',
             ambientFactor:Number(engineering.cableAmbientFactor ?? engineering.ambientFactor ?? 1),
             groupingFactor:Number(engineering.cableGroupingFactor ?? engineering.groupingFactor ?? 1),
-            conductorTempC:Number(engineering.cableTemp??70), powerFactor:Number(engineering.cablePowerFactor||0.9),
+            conductorTempC:Number(engineering.cableTemp??70), powerFactor:Number(engineering.cablePowerFactor||boardFeederPowerFactor(b)),
             reactanceOhmKm:Number(engineering.cableReactance??0.08),
             localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
             minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(Number(s.cb)>=20?6:Number(s.cb)>=15?4:Number(s.cb)>=10?2.5:1.5):0

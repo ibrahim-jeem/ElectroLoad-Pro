@@ -136,3 +136,62 @@ main, header, footer {
   body.sld-print-mode .sld-viewport { height:250mm !important; background:#071426 !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
   body.sld-print-mode [data-sld-toolbar], body.sld-print-mode .sld-no-print { display:none !important; }
 }
+
+
+/* Workspace UX: compact project controls, accessible advanced switch and readable schedules. */
+.workspace-input{display:block;width:100%;margin-top:.3rem;padding:.55rem .7rem;border:1px solid #334155;border-radius:.6rem;background:#020617;color:#e2e8f0;min-height:2.25rem;outline:none}
+.workspace-input:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.18)}
+.workspace-btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem .75rem;border:1px solid #334155;border-radius:.6rem;background:#1e293b;color:#e2e8f0;font-size:.72rem;font-weight:700;transition:background .15s,border-color .15s}
+.workspace-btn:hover{background:#334155;border-color:#64748b}
+.workspace-btn-primary{background:#0369a1;border-color:#0284c7;color:#fff}
+.workspace-btn-primary:hover{background:#0284c7}
+#projectManager{background:linear-gradient(135deg,rgba(15,35,62,.96),rgba(15,23,42,.96));border-color:#29476b}
+#projectManager label{min-width:0}
+#projectManagerStatus{min-height:1rem}
+#advancedPanel[hidden]{display:none!important}
+#advancedPanel{border-top:1px solid #263b58;padding-top:1rem}
+#advancedPanel>section{margin:0}
+#boardHierarchySection{border-color:#29476b}
+#cableSizingSection{border-color:#29476b}
+#dbScheduleSection tbody tr:hover{background:rgba(51,65,85,.25)}
+#dbScheduleSection td{padding:.55rem .5rem;vertical-align:top}
+#dbScheduleSection th{padding:.65rem .5rem;white-space:nowrap}
+#projectReadinessChecks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.5rem}
+@media(max-width:700px){#projectManager .workspace-btn{flex:1}#dbScheduleSection table{min-width:1100px}}
+
+
+/* Release UX pass — compact task-led layout, preserving the navy SLD drafting sheet. */
+#projectDesignBasis{max-width:560px;padding:1.1rem 1.25rem;background:linear-gradient(135deg,rgba(15,35,62,.98),rgba(15,23,42,.98))}
+.project-basis-content{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;max-width:420px}
+#projectTypeNote{line-height:1.55;color:#fbbf24}
+#projectManager{border-color:#29476b}
+#projectManager .workspace-input{min-height:2.5rem}
+main>section{scroll-margin-top:88px}
+main>section:not(#projectDesignBasis):not(#advancedEngineeringSection){transition:border-color .18s ease,box-shadow .18s ease}
+main>section:not(#projectDesignBasis):not(#advancedEngineeringSection):hover{border-color:rgba(71,120,170,.72)}
+#phaseR_stats,#phaseY_stats,#phaseB_stats{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.72rem}
+@media(min-width:768px){#phaseR_stats,#phaseY_stats,#phaseB_stats{font-size:.68rem}}
+#advancedEngineeringSection{background:linear-gradient(135deg,rgba(12,28,50,.98),rgba(15,23,42,.98));border-color:#315477}
+#advancedEngineeringSection>label{min-height:56px}
+#advancedToggle{width:2.7rem;height:1.45rem;appearance:none;border-radius:999px;background:#334155;position:relative;cursor:pointer;transition:background .2s;outline-offset:3px}
+#advancedToggle:before{content:"";position:absolute;width:1.05rem;height:1.05rem;left:.2rem;top:.2rem;border-radius:50%;background:#e2e8f0;transition:transform .2s}
+#advancedToggle:checked{background:#0284c7}
+#advancedToggle:checked:before{transform:translateX(1.22rem);background:white}
+#advancedToggle:focus-visible{outline:2px solid #38bdf8}
+#advancedPanel{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem}
+#advancedPanel>section{min-width:0}
+#boardHierarchySection,#cableSizingSection{box-shadow:0 12px 30px rgba(0,0,0,.16)}
+#cableSizingSection{border-color:#315477;background:linear-gradient(145deg,#0f1e33,#0f172a)}
+#cableSizingSection table,#dbScheduleSection table{font-variant-numeric:tabular-nums}
+#cableSizingSection th,#dbScheduleSection th{position:sticky;top:0;background:#0b1424;z-index:1}
+#projectReadinessChecks>div{min-height:76px}
+#sldViewport{border-radius:14px;box-shadow:inset 0 0 0 1px rgba(96,165,250,.08),0 14px 35px rgba(0,0,0,.18)}
+.sld-tooltip{max-width:min(320px,calc(100% - 16px));line-height:1.5}
+.workspace-btn:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+@media(max-width:767px){
+ #projectDesignBasis{max-width:none}
+ #projectManager .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #phaseR_stats,#phaseY_stats,#phaseB_stats{font-size:.7rem}
+ #advancedEngineeringSection>label{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

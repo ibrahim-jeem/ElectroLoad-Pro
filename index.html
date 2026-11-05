@@ -54,12 +54,20 @@
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
 
         <!-- Project Design Basis -->
-        <section class="bg-slate-900 border border-sky-700/50 rounded-2xl p-5 shadow-xl no-print">
-          <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold text-slate-100 text-sm uppercase tracking-wider"><i class="fa-solid fa-building text-sky-400 mr-2"></i>Project Design Basis</h2><p class="text-xs text-slate-400 mt-1">Select the building category before adding loads. This does not apply invented demand or derating multipliers.</p></div>
-          <label class="text-xs text-slate-300 w-full sm:w-64">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Residential">Residential</option><option value="Commercial">Commercial</option><option value="Industrial">Industrial</option></select></label></div>
-          <p id="projectTypeNote" class="text-[11px] text-amber-300 mt-3">Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.</p>
+        <section id="projectDesignBasis" class="bg-slate-900 border border-sky-700/50 rounded-2xl p-5 shadow-xl no-print">
+          <div class="project-basis-content">
+            <div><h2 class="font-bold text-slate-100 text-sm uppercase tracking-wider"><i class="fa-solid fa-building text-sky-400 mr-2"></i>Project Design Basis</h2><p class="text-xs text-slate-400 mt-1">Start by selecting the building category. Category selection does not invent demand or derating factors.</p></div>
+            <label class="text-xs text-slate-300 block">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Residential">Residential</option><option value="Commercial">Commercial</option><option value="Industrial">Industrial</option></select></label>
+            <p id="projectTypeNote" class="text-[11px] text-amber-300">Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.</p>
+          </div>
         </section>
 
+        <!-- Project Management / Module 5 -->
+        <section id="projectManager" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl no-print">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-sm font-bold uppercase tracking-wider text-slate-100"><i class="fa-solid fa-folder-open text-sky-400 mr-2"></i>Project Workspace</h2><p class="text-xs text-slate-400 mt-1">Save named projects locally, reopen them, or exchange a portable project backup.</p></div><div class="flex flex-wrap gap-2"><button id="projectNewBtn" class="workspace-btn">New</button><button id="projectSaveBtn" class="workspace-btn workspace-btn-primary">Save Project</button><button id="projectExportBtn" class="workspace-btn">Export .elpro.json</button><label class="workspace-btn cursor-pointer">Import<input id="projectImportInput" type="file" accept=".json,.elpro.json,application/json" class="hidden"></label></div></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 text-xs"><label class="text-slate-400">Project name<input id="projectName" class="workspace-input" placeholder="e.g. Gulshan Residence"></label><label class="text-slate-400">Client<input id="projectClient" class="workspace-input" placeholder="Client / organization"></label><label class="text-slate-400">Site location<input id="projectLocation" class="workspace-input" placeholder="Project address"></label><label class="text-slate-400">Prepared by<input id="projectDesigner" class="workspace-input" placeholder="Engineer / designer"></label><label class="text-slate-400">Drawing number<input id="projectDrawingNo" class="workspace-input" placeholder="ELP-E-001"></label><label class="text-slate-400">Revision<input id="projectRevision" class="workspace-input" value="A"></label></div>
+          <div class="flex flex-wrap items-center gap-3 mt-3 text-xs"><label class="text-slate-400">Saved projects<select id="projectPicker" class="workspace-input min-w-56"><option value="default">Current working project</option></select></label><span id="projectManagerStatus" class="text-emerald-300" aria-live="polite">Autosave active in this browser</span></div>
+        </section>
         <!-- System & Configuration Bar -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden no-print">
             <div class="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -73,7 +81,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1.5">Compliance Standard</label>
                     <select id="standardSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
@@ -109,7 +117,7 @@
                     </select>
                 </div>
 
-                <div>
+                <div id="breakerMarginControl">
                     <label class="block text-slate-400 font-medium mb-1.5">Additional Breaker Margin</label>
                     <select id="safetyFactorSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="1.25">1.25x (only when required by code / equipment)</option>
@@ -172,7 +180,7 @@
         </section>
 
         <!-- Distribution Board Hierarchy (MDB / SDB / SB / FDB / RDB) -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
+        <section id="boardHierarchySection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
                 <div>
                     <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
@@ -229,7 +237,7 @@
                 </div>
 
                 <!-- Circuit Grouping & Room Strategy -->
-                <div class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+                <div id="groupingControls" class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                             <span class="block font-semibold text-slate-200">Auto Circuit Grouping</span>
@@ -309,7 +317,7 @@
                     </div>
 
                     <!-- Phase Visual Bars -->
-                    <div class="space-y-4 my-2">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
                         <!-- Phase R -->
                         <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
                             <div class="flex justify-between items-center text-xs">
@@ -361,7 +369,7 @@
                         <span class="font-mono text-slate-200" id="phaseDeviationVal">0.00 A</span>
                     </div>
                     <p class="text-[11px] text-slate-500 leading-tight">
-                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Phase unbalance should be kept under 5% to prevent neutral overheating and sub-station transformer losses.
+                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Current-unbalance indicator uses maximum deviation from average phase current. Review against equipment and utility limits; harmonics and neutral heating are not modelled.
                     </p>
                 </div>
             </section>
@@ -404,6 +412,8 @@
             </div>
         </section>
 
+        <!-- Distribution Board Schedule / Module 4 -->
+        <section id="dbScheduleSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden"><div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800"><div><h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i class="fa-solid fa-table-list text-emerald-400 mr-2"></i>Distribution Board Schedule</h2><p class="text-xs text-slate-400 mt-1">Board-wise outgoing circuits, phase allocation, protective devices, cable selections and feeder summary.</p></div><span id="dbScheduleCount" class="text-xs text-slate-400"></span></div><div class="overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-950/70 text-slate-400 uppercase"><th class="p-2">Board</th><th class="p-2">Type</th><th class="p-2">Way / CKT</th><th class="p-2">Load description</th><th class="p-2">Phase</th><th class="p-2">Load</th><th class="p-2">Ib</th><th class="p-2">Breaker</th><th class="p-2">Cable</th><th class="p-2">V-Drop</th><th class="p-2">Check</th></tr></thead><tbody id="dbScheduleBody" class="divide-y divide-slate-800/70"></tbody></table></div></section>
         <!-- Cable Sizing Engine v2 -->
         <section id="cableSizingSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
@@ -424,12 +434,11 @@
 <label class="text-slate-400">Insulation<select id="cableInsulation" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="PVC">PVC (k=115 Cu)</option><option value="XLPE">XLPE (not enabled)</option></select></label>
 <label class="text-slate-400">Ambient factor Ca<input id="cableAmbientFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
 <label class="text-slate-400">Grouping factor Cg<input id="cableGroupingFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Conductor temperature (°C)<input id="cableTemp" type="number" min="20" max="90" value="70" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+<label class="text-slate-400">Conductor temperature (°C)<input id="cableTemp" type="number" min="20" max="70" value="70" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
 <label class="text-slate-400">Power factor<input id="cablePowerFactor" type="number" min="0.1" max="1" step="0.01" value="" placeholder="Auto from circuit load PF" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
 <label class="text-slate-400">Reactance (Ω/km)<input id="cableReactance" type="number" min="0" step="0.001" value="0.08" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
 <label class="text-slate-400">Thermal trip time (s)<input id="cableTripTime" type="number" min="0.01" max="5" step="0.01" value="0.4" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Fault level at check point (kA)<input id="cableFaultLevel" type="number" min="0.01" step="0.01" placeholder="Short-circuit study" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Breaker breaking capacity (kA)<input id="cableBreakingCapacity" type="number" min="0.01" step="0.01" placeholder="Manufacturer data" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+<div class="text-[11px] text-slate-400 rounded-lg border border-slate-800 bg-slate-950 p-3">Fault current and breaker Icu/Icn are entered per circuit below. Use the same prospective-fault-current point and the selected breaker manufacturer data.</div>
 <div class="rounded-lg bg-slate-950 border border-slate-800 p-3"><span class="text-slate-500">Ampacity source</span><strong id="cableTableMode" class="block text-cyan-300 mt-1">IEC 60364-5-52 B.52.2 / B.52.4</strong></div>
 </div>
             <div id="cableSizingSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4" aria-live="polite"></div>
@@ -444,12 +453,13 @@
                             <th class="py-2.5 px-2">V-Drop</th>
                             <th class="py-2.5 px-2">PE</th>
                             <th class="py-2.5 px-2">Fault current at cable (kA)</th>
-                            <th class="py-2.5 px-2">Thermal check</th>
+                            <th class="py-2.5 px-2">Breaker Icu/Icn (kA)</th>
+                            <th class="py-2.5 px-2">Thermal / breaking check</th>
                             <th class="py-2.5 px-2">Result</th>
                         </tr>
                     </thead>
                     <tbody id="cableSizingBody" class="divide-y divide-slate-800/60">
-                        <tr><td colspan="9" class="p-4 text-slate-500">Waiting for circuit calculations…</td></tr>
+                        <tr><td colspan="10" class="p-4 text-slate-500">Waiting for circuit calculations…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -500,6 +510,11 @@
             </div>
         </section>
 
+        <!-- Release QA checklist -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl no-print"><div class="mb-3"><h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i class="fa-solid fa-clipboard-check text-amber-400 mr-2"></i>Design Review Checklist</h2><p class="text-xs text-slate-400 mt-1">The app flags missing inputs; these items still require qualified engineering verification.</p></div><div id="projectReadinessChecks"></div></section>
+
+        <!-- Advanced engineering controls -->
+        <section id="advancedEngineeringSection" class="bg-slate-900 border border-sky-800/50 rounded-2xl p-4 shadow-xl no-print"><label class="flex items-center justify-between gap-4 cursor-pointer"><span><strong class="text-sm text-slate-100 uppercase tracking-wider"><i class="fa-solid fa-gears text-sky-400 mr-2"></i>Advanced Engineering</strong><small class="block text-xs text-slate-400 mt-1">Optional controls: circuit grouping strategy, breaker margin, board hierarchy, detailed cable verification, fault inputs and drawing conventions.</small></span><span class="flex items-center gap-2 text-xs text-slate-300"><input id="advancedToggle" type="checkbox" role="switch" aria-controls="advancedPanel" aria-expanded="false" class="w-5 h-5 accent-sky-500"> Advanced tools</span></label><div id="advancedPanel" data-advanced-content class="mt-4 space-y-5" hidden></div></section>
     </main>
 
     <!-- Footer -->
@@ -564,19 +579,21 @@
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">2. Breaker Sizing Rule ($I_n$)</h4>
                     <p class="mb-1">Illustrative sizing assumption only: verify continuous-load rules and protection requirements against the adopted local code.</p>
-                    <p class="font-mono text-slate-200">$I_n \ge 1.25 \times I_d$</p>
-                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A, 25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A.</p>
+                    <p class="font-mono text-slate-200">$I_b \le I_n \le I_z$</p>
+                    <p class="text-slate-400 text-[11px] mt-1">The app selects the next available breaker rating at or above calculated design current. Any additional margin is an explicit project input, not a universal 1.25× rule. Verify device/load-specific requirements and cable coordination.</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A, 25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A, 315A, 400A.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">3. Voltage Drop Equation ($\%V_d$)</h4>
-                    <p class="font-mono text-slate-200 mb-1">$\%V_d = \left( \frac{2 \times L \times I_d \times R_c}{V_{LN}} \right) \times 100$</p>
-                    <p class="text-slate-400 text-[11px]">Where $L$ is wire run distance (meters), $R_c$ is conductor resistance ($\Omega/km$), and allowable limit is $\le 3\%$ for branch circuits.</p>
+                    <p class="font-mono text-slate-200 mb-1">1φ: $\%\Delta U=\frac{2IL(R\cos\phi+X\sin\phi)}{U}\times100$ · 3φ: $\%\Delta U=\frac{\sqrt{3}IL(R\cos\phi+X\sin\phi)}{U}\times100$</p>
+                    <p class="text-slate-400 text-[11px]">R and X are in Ω/km and L is one-way length in km. The app adjusts copper R for conductor temperature. Apply the selected project voltage-drop limit; the Bangladesh residential guideline states 2.5% within its scope.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">4. Phase Unbalance Percentage</h4>
-                    <p class="font-mono text-slate-200">$\% \text{Unbalance} = \frac{|I_{max} - I_{avg}|}{I_{avg}} \times 100\%$</p>
+                    <p class="font-mono text-slate-200">$\% \text{Unbalance} = \frac{\max(|I_R-I_{avg}|,|I_Y-I_{avg}|,|I_B-I_{avg}|)}{I_{avg}}\times100\%$</p>
+                    <p class="text-slate-400 text-[11px]">This matches the displayed maximum-deviation calculation. It is a load-balance indicator, not a substitute for harmonic / neutral assessment.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
@@ -604,5 +621,6 @@
     <script src="js/sld.js"></script>
     <script src="js/export.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/project-workspace.js"></script>
 </body>
 </html>

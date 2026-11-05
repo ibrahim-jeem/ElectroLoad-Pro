@@ -34,6 +34,13 @@ const IEC_CABLE_REFERENCE_V2 = {
     }
   }
 };
+// IEC 60228 Class 2 stranded copper: maximum DC conductor resistance at 20 °C (Ω/km).
+// Using maximum tabulated resistance avoids optimistic voltage-drop estimates from ideal copper resistivity.
+const IEC_60228_CU_CLASS2_R20 = {
+  1.5:12.1, 2.5:7.41, 4:4.61, 6:3.08, 10:1.83, 16:1.15,
+  25:0.727, 35:0.524, 50:0.387, 70:0.268, 95:0.193, 120:0.153,
+  150:0.124, 185:0.0991, 240:0.0754, 300:0.0601
+};
 function calculateCableChecks(input) {
   const fail = message => ({ valid:false, status:'BLOCKED', message });
   const n = v => Number(v);
@@ -43,7 +50,7 @@ function calculateCableChecks(input) {
   const phases=n(input.phases), method=String(input.installationMethod||'');
   const conductors=n(input.loadedConductors), material=input.material||'Cu', insulation=input.insulation||'PVC';
   if (![Ib,In,L,V,Ca,Cg,limit,pf,temp,phases,conductors].every(Number.isFinite) ||
-      Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Ca>1.5 || Cg<=0 || Cg>1.5 || limit<=0 || pf<=0 || pf>1 || temp<20 || temp>90 ||
+      Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Ca>1.5 || Cg<=0 || Cg>1.5 || limit<=0 || pf<=0 || pf>1 || temp<20 || temp>70 ||
       ![1,3].includes(phases) || ![2,3].includes(conductors)) return fail('Invalid or incomplete design inputs.');
   if (input.wireUnit==='AWG') return fail('AWG/NEC ampacity tables are not part of this IEC metric reference profile. Switch the project wire standard to Metric.');
   if (conductors !== (phases===3?3:2)) return fail('Loaded conductor count must match the circuit phase configuration (2 for single-phase, 3 for three-phase).');
@@ -60,9 +67,11 @@ function calculateCableChecks(input) {
   if(!cable) return fail('No cable in the selected reference table can carry the protective-device rating after correction.');
   const Iz=cable.ampacity*correction;
   const coordination=Ib<=In && In<=Iz;
-  // R at conductor operating temperature. R20 = 17.241 (Cu) / S ohm-km;
+  // IEC 60228 Class 2 maximum conductor resistance at 20 °C, corrected to operating temperature.
   // alpha20 = 0.00393/K. X defaults to 0.08 ohm/km when no manufacturer data exists.
-  const S=cable.size, R20=17.241/S, R=R20*(1+0.00393*(temp-20));
+  const S=cable.size, R20=IEC_60228_CU_CLASS2_R20[S];
+  if(!Number.isFinite(R20)) return fail('No IEC 60228 Class 2 resistance reference exists for the selected conductor size.');
+  const R=R20*(1+0.00393*(temp-20));
   const X=n(input.reactanceOhmKm ?? 0.08);
   if(!Number.isFinite(X)||X<0) return fail('Invalid cable reactance.');
   const sinPhi=Math.sqrt(Math.max(0,1-pf*pf));
@@ -92,19 +101,19 @@ function calculateCableChecks(input) {
   const breakingCheck=Number.isFinite(faultLevel)&&faultLevel>0&&Number.isFinite(breaking)&&breaking>0
     ? {status:breaking>=faultLevel?'PASS — BREAKING CAPACITY':'FAIL — BREAKING CAPACITY',faultLevel,breaking}
     : {status:'DATA REQUIRED'};
-  const overall=!coordination||!voltageDropPass||thermal.status.startsWith('FAIL')||breakingCheck.status.startsWith('FAIL')
+  const overall=!coordination||!voltageDropPass||(thermal.status.startsWith('FAIL')||thermal.status==='INVALID INPUT')||breakingCheck.status.startsWith('FAIL')
     ? 'REVIEW / FAIL' : 'INCOMPLETE — ENGINEER REVIEW REQUIRED';
   return {valid:true,status:overall,cable,phaseMm2:S,neutralMm2:S,Ib,In,Iz,correction,coordination,R,X,deltaV,vDropPct,voltageDropPass,peMm2,thermal,breakingCheck,
     source:IEC_CABLE_REFERENCE_V2.source,method,conductors,material,insulation};
 }
 function cableInputValue(id,fallback){const el=document.getElementById(id);return el?el.value:fallback;}
 function initCableSizingUI(){
-  const ids=['cableMaxVdrop','cableInsulation','cableTripTime','cableMethod','cableAmbientFactor','cableGroupingFactor','cableTemp','cablePowerFactor','cableMaterial','cableReactance','cableFaultLevel','cableBreakingCapacity'];
+  const ids=['cableMaxVdrop','cableInsulation','cableTripTime','cableMethod','cableAmbientFactor','cableGroupingFactor','cableTemp','cablePowerFactor','cableMaterial','cableReactance'];
   const values={cableMaxVdrop:engineering.cableMaxVdrop??2.5,cableInsulation:engineering.cableInsulation||'PVC',cableTripTime:engineering.cableTripTime??0.4,
     cableMethod:engineering.cableMethod||'B2',
     cableAmbientFactor:engineering.cableAmbientFactor??1,cableGroupingFactor:engineering.cableGroupingFactor??1,
     cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??'',cableMaterial:engineering.cableMaterial||'Cu',
-    cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
+    cableReactance:engineering.cableReactance??0.08};
   ids.forEach(id=>{const el=document.getElementById(id);if(el){el.value=values[id];el.addEventListener('change',()=>{engineering[id.replace(/^cable/,'cable')]=el.value;persistCableSettings();});}});
   const tableMode=document.getElementById('cableTableMode'); if(tableMode)tableMode.textContent=config.wireUnit==='Metric'?'Metric copper · mm² · 2 / 3 loaded PVC':'AWG profile unavailable';
   renderCableSizing();
@@ -116,9 +125,8 @@ function persistCableSettings(){
  engineering.cableAmbientFactor=n(read('cableAmbientFactor'));
   engineering.cableGroupingFactor=n(read('cableGroupingFactor')); engineering.cableTemp=n(read('cableTemp'));
   engineering.cablePowerFactor=read('cablePowerFactor')===''?null:n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
-  engineering.cableReactance=n(read('cableReactance')); engineering.cableFaultLevel=read('cableFaultLevel');
-  engineering.cableBreakingCapacity=read('cableBreakingCapacity');
-  if(typeof recalculateAll==='function')recalculateAll(); else renderCableSizing(); if(typeof saveProject==='function')saveProject();
+  engineering.cableReactance=n(read('cableReactance'));
+    if(typeof recalculateAll==='function')recalculateAll(); else renderCableSizing(); if(typeof saveProject==='function')saveProject();
 }
 function renderCableSizing(){
   const body=document.getElementById('cableSizingBody'),summary=document.getElementById('cableSizingSummary'),notes=document.getElementById('cableSizingNotes');
@@ -128,28 +136,29 @@ function renderCableSizing(){
 ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     groupingFactor:n(cableInputValue('cableGroupingFactor',1)),conductorTempC:n(cableInputValue('cableTemp',70)),
     powerFactor:cableInputValue('cablePowerFactor','')===''?null:n(cableInputValue('cablePowerFactor','')),material:cableInputValue('cableMaterial','Cu'),
-    reactanceOhmKm:n(cableInputValue('cableReactance',0.08)),faultCurrentAtPointKA:cableInputValue('cableFaultLevel',''),
-    breakingCapacityKA:cableInputValue('cableBreakingCapacity','')};
+    reactanceOhmKm:n(cableInputValue('cableReactance',0.08))};
   if(!circuits.length){body.innerHTML='<tr><td colspan="10" class="p-4 text-slate-500">No circuits available.</td></tr>';summary.innerHTML='';notes.textContent='Add loads to begin cable verification.';return;}
   const rows=circuits.map(c=>{
     const phases=Number(c.sup)===3?3:1;
     const faultInputs=engineering.cableFaultInputs||(engineering.cableFaultInputs={});
     const key=c.board+'|'+c.id, fault=Object.prototype.hasOwnProperty.call(faultInputs,key)?faultInputs[key]:'';
+    const protectionInputs=engineering.cableProtectionInputs||(engineering.cableProtectionInputs={});
+    const protection=protectionInputs[key]||{};
     const circuitPf=c.items.reduce((sum,item)=>sum+Number(item.qty)*Number(item.watts),0)/Math.max(c.items.reduce((sum,item)=>sum+Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
     const result=calculateCableChecks({...settings,wireUnit:config.wireUnit,powerFactor:settings.powerFactor||circuitPf,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
-      voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,
+      voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,faultCurrentAtPointKA:fault,breakingCapacityKA:protection.breakingCapacityKA||'',
       localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
       minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(c.mcb>=20?6:c.mcb>=15?4:c.mcb>=10?2.5:1.5):0,
       loadedConductors:phases===3?3:2});
-    return {c,key,fault,result};
+    return {c,key,fault,result,protection};
   });
   const ready=rows.filter(x=>x.result.valid),pass=ready.filter(x=>x.result.status.startsWith('INCOMPLETE')).length;
   const blocked=rows.length-ready.length;
   const tile=(label,value)=>'<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-[10px] uppercase tracking-wide text-slate-500">'+label+'</div><div class="text-xl font-bold mt-1 text-slate-100">'+value+'</div></div>';
   summary.innerHTML=tile('Circuits analysed',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
-  body.innerHTML=rows.map(({c,key,fault,result})=>{
+  body.innerHTML=rows.map(({c,key,fault,result,protection})=>{
     const label=escapeHTML(boardOf(c.board).name+' · '+c.id);
-    if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="7" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
+    if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="8" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
     const cable=result.cable;
     const thermal=result.thermal.status;
     return '<tr><td class="p-2 text-slate-200">'+label+'<small class="block text-slate-500">'+c.distance+' m · '+(c.sup===3?'3-phase':'1-phase')+'</small></td>'+
@@ -159,6 +168,7 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
       '<td class="p-2">'+result.vDropPct.toFixed(2)+'% <small class="block text-slate-500">limit '+settings.maxVdrop+'%</small></td>'+
       '<td class="p-2">'+result.peMm2.toFixed(1)+' mm²</td>'+
       '<td class="p-2"><input aria-label="Fault current '+label+'" data-cable-fault="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(fault)+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
+      '<td class="p-2"><input aria-label="Breaker breaking capacity '+label+'" data-cable-icu="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(protection.breakingCapacityKA||'')+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
       '<td class="p-2">'+escapeHTML(thermal)+'<small class="block text-slate-500">Breaking: '+escapeHTML(result.breakingCheck.status)+'</small></td>'+
       '<td class="p-2 text-amber-300 font-semibold">'+escapeHTML(result.status)+'</td></tr>';
   }).join('');
@@ -166,7 +176,15 @@ ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
     const value=el.value.trim(); if(value&&(!Number.isFinite(Number(value))||Number(value)<=0)){el.setCustomValidity('Enter a positive fault current in kA.');el.reportValidity();return;}
     el.setCustomValidity(''); engineering.cableFaultInputs=engineering.cableFaultInputs||{};
     if(value)engineering.cableFaultInputs[el.dataset.cableFault]=value;else delete engineering.cableFaultInputs[el.dataset.cableFault];
-    renderCableSizing();if(typeof saveProject==='function')saveProject();
+    if(typeof recalculateAll==='function')recalculateAll();else renderCableSizing();if(typeof saveProject==='function')saveProject();
+  }));
+  body.querySelectorAll('[data-cable-icu]').forEach(el=>el.addEventListener('change',()=>{
+    const value=el.value.trim(); if(value&&(!Number.isFinite(Number(value))||Number(value)<=0)){el.setCustomValidity('Enter a positive breaker breaking capacity in kA.');el.reportValidity();return;}
+    el.setCustomValidity('');engineering.cableProtectionInputs=engineering.cableProtectionInputs||{};
+    const current=engineering.cableProtectionInputs[el.dataset.cableIcu]||{};
+    if(value)current.breakingCapacityKA=value;else delete current.breakingCapacityKA;
+    if(Object.keys(current).length)engineering.cableProtectionInputs[el.dataset.cableIcu]=current;else delete engineering.cableProtectionInputs[el.dataset.cableIcu];
+    if(typeof recalculateAll==='function')recalculateAll();else renderCableSizing();if(typeof saveProject==='function')saveProject();
   }));
   notes.innerHTML='<p><b class="text-slate-200">Bangladesh residential minimums:</b> the Power Division guideline gives 1.5 mm² for 5 A, 2.5 mm² for 10 A, 4 mm² for 15 A and 6 mm² for 20 A protected circuits. The application applies the nearest lower threshold conservatively to larger standard breaker ratings (for example, 16 A maps to the 15 A minimum); review this policy against the actual adopted requirements.</p>' +
   '<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
