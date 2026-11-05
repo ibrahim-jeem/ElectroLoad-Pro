@@ -18,6 +18,19 @@ assert.equal(normal.coordination,true);
 assert.equal(normal.R,12.1);
 assert.ok(Math.abs(normal.vDropPct-2.104) < 0.01);
 assert.equal(normal.voltageDropPass,true);
+const ampacityReferences = {
+  A1: {2:14.5,3:13.5}, A2: {2:14,3:13}, B1: {2:17.5,3:15.5},
+  B2: {2:16.5,3:15}, C: {2:19.5,3:17.5}
+};
+for (const [method, conductors] of Object.entries(ampacityReferences)) {
+  for (const [loaded, expected] of Object.entries(conductors)) {
+    const result=calculateCableChecks({...base,installationMethod:method,loadedConductors:Number(loaded),phases:Number(loaded)===3?3:1,breakerRating:10,designCurrent:5});
+    assert.equal(result.valid,true);
+    assert.equal(result.cable.size,1.5);
+    assert.equal(result.cable.ampacity,expected);
+  }
+}
+assert.equal(calculateCableChecks({...base,conductorTempC:90}).valid,false);
 const derated=calculateCableChecks({...base,ambientFactor:0.7,groupingFactor:0.8});
 assert.equal(derated.cable.size,4);
 const overload=calculateCableChecks({...base,designCurrent:20});
