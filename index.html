@@ -579,19 +579,21 @@
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">2. Breaker Sizing Rule ($I_n$)</h4>
                     <p class="mb-1">Illustrative sizing assumption only: verify continuous-load rules and protection requirements against the adopted local code.</p>
-                    <p class="font-mono text-slate-200">$I_n \ge 1.25 \times I_d$</p>
-                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A, 25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A.</p>
+                    <p class="font-mono text-slate-200">$I_b \le I_n \le I_z$</p>
+                    <p class="text-slate-400 text-[11px] mt-1">The app selects the next available breaker rating at or above calculated design current. Any additional margin is an explicit project input, not a universal 1.25× rule. Verify device/load-specific requirements and cable coordination.</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A, 25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A, 315A, 400A.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">3. Voltage Drop Equation ($\%V_d$)</h4>
-                    <p class="font-mono text-slate-200 mb-1">$\%V_d = \left( \frac{2 \times L \times I_d \times R_c}{V_{LN}} \right) \times 100$</p>
-                    <p class="text-slate-400 text-[11px]">Where $L$ is wire run distance (meters), $R_c$ is conductor resistance ($\Omega/km$), and allowable limit is $\le 3\%$ for branch circuits.</p>
+                    <p class="font-mono text-slate-200 mb-1">1φ: $\Delta U=2IL(R\cos\phi+X\sin\phi)$ · 3φ: $\Delta U=\sqrt{3}IL(R\cos\phi+X\sin\phi)$</p>
+                    <p class="text-slate-400 text-[11px]">R and X are in Ω/km and L is one-way length in km. The app adjusts copper R for conductor temperature. Apply the selected project voltage-drop limit; the Bangladesh residential guideline states 2.5% within its scope.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">4. Phase Unbalance Percentage</h4>
-                    <p class="font-mono text-slate-200">$\% \text{Unbalance} = \frac{|I_{max} - I_{avg}|}{I_{avg}} \times 100\%$</p>
+                    <p class="font-mono text-slate-200">$\% \text{Unbalance} = \frac{\max(|I_R-I_{avg}|,|I_Y-I_{avg}|,|I_B-I_{avg}|)}{I_{avg}}\times100\%$</p>
+                    <p class="text-slate-400 text-[11px]">This matches the displayed maximum-deviation calculation. It is a load-balance indicator, not a substitute for harmonic / neutral assessment.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
