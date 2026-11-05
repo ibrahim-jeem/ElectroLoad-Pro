@@ -173,6 +173,88 @@
                 </div>
             </div>
         </section>
+        
+        <!-- Phase Balancer & Live Busbar Monitor (5 Cols) -->
+        <section
+            class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <i class="fa-solid fa-chart-simple text-amber-400"></i> Live Busbar & Phase Load
+                        </h2>
+                        <p class="text-xs text-slate-400">Real-time load distribution across phases</p>
+                    </div>
+
+                    <button id="autoBalanceBtn" onclick="autoBalancePhases()"
+                        class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Balance
+                    </button>
+                </div>
+
+                <!-- Phase Visual Bars -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
+                    <!-- Phase R -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-red-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Phase R (Red)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseR_stats">0.00 kW | 0.0 A</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseR_bar" class="bg-red-500 h-full transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Phase Y -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Phase Y
+                                (Yellow)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseY_stats">0.00 kW | 0.0 A</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseY_bar" class="bg-amber-400 h-full transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Phase B -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-blue-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Phase B (Blue)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseB_stats">0.00 kW | 0.0 A</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseB_bar" class="bg-blue-500 h-full transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-2 mt-4">
+                <div class="flex justify-between text-slate-400">
+                    <span>Neutral Current (Est.):</span>
+                    <span class="font-mono text-slate-200" id="neutralCurrentVal">0.00 A</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                    <span>Max Phase Deviation:</span>
+                    <span class="font-mono text-slate-200" id="phaseDeviationVal">0.00 A</span>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-tight">
+                    <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Current-unbalance indicator uses maximum
+                    deviation from average phase current. Review against equipment and utility limits; harmonics and
+                    neutral heating are not modelled.
+                </p>
+            </div>
+        </section>
 
         <!-- KPI Executive Summary Cards -->
         <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 lg:gap-4">
@@ -360,88 +442,6 @@
                         <!-- JS Dynamic Insertion -->
                     </tbody>
                 </table>
-            </div>
-        </section>
-
-        <!-- Phase Balancer & Live Busbar Monitor (5 Cols) -->
-        <section
-            class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-            <div>
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <i class="fa-solid fa-chart-simple text-amber-400"></i> Live Busbar & Phase Load
-                        </h2>
-                        <p class="text-xs text-slate-400">Real-time load distribution across phases</p>
-                    </div>
-
-                    <button id="autoBalanceBtn" onclick="autoBalancePhases()"
-                        class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Balance
-                    </button>
-                </div>
-
-                <!-- Phase Visual Bars -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
-                    <!-- Phase R -->
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="font-bold text-red-400 flex items-center gap-1.5">
-                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Phase R (Red)
-                            </span>
-                            <span class="font-mono text-slate-300" id="phaseR_stats">0.00 kW | 0.0 A</span>
-                        </div>
-                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                            <div id="phaseR_bar" class="bg-red-500 h-full transition-all duration-300"
-                                style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Phase Y -->
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="font-bold text-amber-400 flex items-center gap-1.5">
-                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Phase Y
-                                (Yellow)
-                            </span>
-                            <span class="font-mono text-slate-300" id="phaseY_stats">0.00 kW | 0.0 A</span>
-                        </div>
-                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                            <div id="phaseY_bar" class="bg-amber-400 h-full transition-all duration-300"
-                                style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Phase B -->
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="font-bold text-blue-400 flex items-center gap-1.5">
-                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Phase B (Blue)
-                            </span>
-                            <span class="font-mono text-slate-300" id="phaseB_stats">0.00 kW | 0.0 A</span>
-                        </div>
-                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                            <div id="phaseB_bar" class="bg-blue-500 h-full transition-all duration-300"
-                                style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-2 mt-4">
-                <div class="flex justify-between text-slate-400">
-                    <span>Neutral Current (Est.):</span>
-                    <span class="font-mono text-slate-200" id="neutralCurrentVal">0.00 A</span>
-                </div>
-                <div class="flex justify-between text-slate-400">
-                    <span>Max Phase Deviation:</span>
-                    <span class="font-mono text-slate-200" id="phaseDeviationVal">0.00 A</span>
-                </div>
-                <p class="text-[11px] text-slate-500 leading-tight">
-                    <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Current-unbalance indicator uses maximum
-                    deviation from average phase current. Review against equipment and utility limits; harmonics and
-                    neutral heating are not modelled.
-                </p>
             </div>
         </section>
         </div>
