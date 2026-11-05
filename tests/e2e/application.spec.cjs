@@ -290,6 +290,8 @@ test('named project reload restores board and project metadata', async ({ page }
     copy.meta.id='other-copy';copy.meta.name='Other Copy';projects.push(copy);
     localStorage.setItem('elpro_projects_v1',JSON.stringify(projects));
   });
+  await page.reload();
+  await page.locator('#advancedToggle').check();
   const first=page.locator('#boardTableBody tr').first();
   const original=await first.locator('input').first().inputValue();
   await first.locator('input').first().fill('Changed After Save');
