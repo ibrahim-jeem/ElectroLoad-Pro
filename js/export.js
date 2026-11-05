@@ -55,7 +55,7 @@ function exportToExcel() {
         const pf = ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) > 0
             ? ckt.watts / ckt.items.reduce((sum,item)=>sum+(Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01)),0) : 0.9;
         const result = calculateCableChecks({
-            designCurrent: ckt.current, breakerRating: ckt.mcb, lengthM: ckt.distance,
+            designCurrent: ckt.current, breakerRating: ckt.mcb, lengthM: ckt.distance, wireUnit: config.wireUnit,
             voltage: phases === 3 ? config.voltageLL : config.voltageLN, phases,
             maxVdrop: cableMaxDrop, faultCurrentKA: fault, tripTime: cableTripTime,
             insulation: engineering.cableInsulation || 'PVC',
