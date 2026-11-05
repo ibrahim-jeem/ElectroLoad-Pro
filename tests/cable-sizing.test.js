@@ -15,7 +15,7 @@ const localMinimum=calculateCableChecks({...base,minimumSizeMm2:4});
 assert.equal(localMinimum.cable.size,4);
 assert.equal(calculateCableChecks({...base,loadedConductors:3}).valid,false);
 assert.equal(normal.coordination,true);
-assert.ok(Math.abs(normal.vDropPct-1.999) < 0.01);
+assert.equal(normal.R,12.1);\nassert.ok(Math.abs(normal.vDropPct-2.104) < 0.01);
 assert.equal(normal.voltageDropPass,true);
 const derated=calculateCableChecks({...base,ambientFactor:0.7,groupingFactor:0.8});
 assert.equal(derated.cable.size,4);
