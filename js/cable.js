@@ -5,18 +5,17 @@
  */
 // IEC 60364-5-52 / Schneider Electrical Installation Guide simplified unburied copper-PVC
 // columns are transcribed as published; values are A at reference conditions.
-// 2 loaded conductors: A1,A2,B1,B2,C,E,F; 3 loaded conductors: A1,A2,B1,B2,C,E.
-// F/3-loaded and XLPE combinations are deliberately unavailable in this compact dataset.
+// Only seven 2-loaded-conductor PVC columns are enabled. Flattened source HTML does not preserve the full 3-loaded/XLPE header mapping; those combinations are blocked rather than guessed.
 const IEC_CABLE_REFERENCE_V2 = {
   source: 'IEC 60364-5-52 Table C.52.1 (Schneider Electric Electrical Installation Guide, Fig. G21)',
   sizes: [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240],
   methods: {
-    A1: {2:[13,17.5,23,29,39,52,68,null,null,null,null,null,null,null,null],3:[22,30,40,51,70,94,119,147,179,229,278,322,371,424,500]},
-    A2: {2:[13.5,18,24,31,42,56,73,null,null,null,null,null,null,null,null],3:[23,31,43,54,75,100,127,158,192,246,298,346,395,450,538]},
-    B1: {2:[14.5,19.5,26,34,46,61,80,null,null,null,null,null,null,null,null],3:[24,33,46,58,80,107,135,169,207,268,328,382,441,506,599]},
-    B2: {2:[15.5,21,28,36,50,68,89,110,134,171,207,239,null,null,null],3:[26,36,49,63,86,115,149,185,225,289,352,410,473,542,641]},
-    C:  {2:[17,23,31,40,54,73,95,117,141,179,216,249,285,324,380],3:[27,36,49,63,86,115,149,185,225,289,352,410,473,542,641]},
-    E:  {2:[18.5,25,34,43,60,80,101,126,153,196,238,276,318,362,424],3:[30,40,54,70,94,127,169,200,242,310,377,437,504,575,679]},
+    A1: {2:[13,17.5,23,29,39,52,68,null,null,null,null,null,null,null,null],3:null},
+    A2: {2:[13.5,18,24,31,42,56,73,null,null,null,null,null,null,null,null],3:null},
+    B1: {2:[14.5,19.5,26,34,46,61,80,null,null,null,null,null,null,null,null],3:null},
+    B2: {2:[15.5,21,28,36,50,68,89,110,134,171,207,239,null,null,null],3:null},
+    C:  {2:[17,23,31,40,54,73,95,117,141,179,216,249,285,324,380],3:null},
+    E:  {2:[18.5,25,34,43,60,80,101,126,153,196,238,276,318,362,424],3:null},
     F:  {2:[19.5,27,36,46,63,85,110,137,167,213,258,299,344,392,461],3:null}
   }
 };
@@ -40,8 +39,9 @@ function calculateCableChecks(input) {
   if (!Array.isArray(amps)) return fail('No verified ampacity column is available for this installation method and number of loaded conductors.');
   const correction=Ca*Cg;
   if (correction>1.5) return fail('Combined correction factor is outside the supported screening range.');
+  const minimumSize=n(input.minimumSizeMm2||0);
   const table=IEC_CABLE_REFERENCE_V2.sizes.map((size,i)=>({size,ampacity:amps[i]})).filter(x=>Number.isFinite(x.ampacity));
-  const cable=table.find(x=>x.ampacity*correction>=In);
+  const cable=table.find(x=>x.size>=minimumSize && x.ampacity*correction>=In);
   if(!cable) return fail('No cable in the selected reference table can carry the protective-device rating after correction.');
   const Iz=cable.ampacity*correction;
   const coordination=Ib<=In && In<=Iz;
@@ -121,7 +121,9 @@ function renderCableSizing(){
     const key=c.board+'|'+c.id, fault=Object.prototype.hasOwnProperty.call(faultInputs,key)?faultInputs[key]:'';
     const result=calculateCableChecks({...settings,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
       voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,
-      localPeMinimum:config.standard==='BNBC'?4:0});
+      localPeMinimum:config.standard==='BNBC'&&config.projectType==='Residential'?4:0,
+      minimumSizeMm2:config.standard==='BNBC'&&config.projectType==='Residential'?(c.mcb>=20?6:c.mcb>=15?4:c.mcb>=10?2.5:1.5):0,
+      loadedConductors:phases===3?3:2});
     return {c,key,fault,result};
   });
   const ready=rows.filter(x=>x.result.valid),pass=ready.filter(x=>x.result.status.startsWith('INCOMPLETE')).length;
@@ -153,6 +155,6 @@ function renderCableSizing(){
   '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Table C.52.1 simplified unburied reference dataset. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
   '<p><b class="text-slate-200">Voltage drop:</b> ΔU = (2 for 1φ, √3 for balanced 3φ) × I × L × (R cosφ + X sinφ); R is adjusted from 20°C using copper α20=0.00393/K. X defaults to 0.08 Ω/km unless manufacturer data is supplied.</p>'+
   '<p><b class="text-slate-200">Short-circuit withstand:</b> S ≥ I√t/k, with k=115 for Cu/PVC and 143 for Cu/XLPE; the selected table currently only enables PVC. Fault-current-at-cable must be entered at each circuit location. Breaking-capacity comparison is only at the entered common fault point.</p>'+
-  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
+  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. Only the 2-loaded-conductor PVC columns are enabled; 3-loaded-conductor, XLPE and aluminium selections are blocked rather than guessed. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={calculateCableChecks};
