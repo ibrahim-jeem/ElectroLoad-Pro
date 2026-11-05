@@ -20,7 +20,7 @@ For each circuit and board feeder, V2 follows this order:
 
 ## Project type and diversity
 
-Residential, Commercial and Industrial are project-context selections, not automatic multipliers. The Power Division guideline says diversity should be considered at circuit / floor / building / complex levels but does not prescribe one universal factor for every load category. V2 therefore removes the former undocumented automatic 0.90 / 0.70 / 0.85 factors. Each fixture now has an explicit, editable demand factor, defaulting to 1.00. The old category-wide 0.90 / 0.70 / 0.85 values have been removed. The engineer must document the basis of any diversity factor entered.
+Residential, Commercial and Industrial are project-context selections, not automatic multipliers. The Power Division guideline says diversity should be considered at circuit / floor / building / complex levels but does not prescribe one universal factor for every load category. V2 therefore removes the former undocumented automatic 0.90 / 0.70 / 0.85 factors. Each fixture now has an explicit, editable demand factor, defaulting to 1.00. The old category-wide 0.90 / 0.70 / 0.85 values have been removed. Demand factors are applied to board-feeder and main-incomer demand current / demand kW; branch-circuit cable and protective-device sizing still use the connected circuit load. The engineer must document the basis of any diversity factor entered.
 
 For Residential projects, the Bangladesh guideline's 1.65 current factor is applied by default to fixture names containing fan or fluorescent and to motor-category loads up to 1 kW. It remains editable per load. Do not apply it blindly to all loads.
 
