@@ -45,6 +45,44 @@ function exportToExcel() {
         };
     });
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(boardRows), "Boards");
+    const cableMetric = config.wireUnit === 'Metric';
+    const cableTable = cableMetric ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
+    const cableFaults = engineering.cableFaultInputs || {};
+    const cableMaxDrop = Number(engineering.cableMaxVdrop ?? 3);
+    const cableTripTime = Number(engineering.cableTripTime ?? 0.4);
+    const cableRows = circuits.map(ckt => {
+        const key = ckt.board + '|' + ckt.id;
+        const fault = Object.prototype.hasOwnProperty.call(cableFaults, key) ? cableFaults[key] : '';
+        const phases = Number(ckt.sup) === 3 ? 3 : 1;
+        const result = calculateCableChecks({
+            designCurrent: ckt.current, breakerRating: ckt.mcb,
+            ambientFactor: Number(engineering.ambientFactor || 1), groupingFactor: Number(engineering.groupingFactor || 1),
+            lengthM: ckt.distance, voltage: phases === 3 ? config.voltageLL : config.voltageLN,
+            voltageLL: config.voltageLL, phases, maxVdrop: cableMaxDrop, wireTable: cableTable,
+            faultCurrentKA: fault, tripTime: cableTripTime, insulation: engineering.cableInsulation || 'PVC', metric: cableMetric
+        });
+        return {
+            Board: boardOf(ckt.board).name, Circuit: ckt.id, Supply: phases + '-phase',
+            'Design Current Ib (A)': Number(ckt.current.toFixed(2)),
+            'Breaker Rating In (A)': ckt.mcb == null ? 'NOT SIZED' : ckt.mcb,
+            'Selected Cable': result.cable ? result.cable.size : 'NOT SIZED',
+            'Corrected Ampacity Iz (A)': Number.isFinite(result.Iz) ? Number(result.Iz.toFixed(2)) : 'NOT CALCULATED',
+            'Ambient Factor': Number(engineering.ambientFactor || 1),
+            'Grouping Factor': Number(engineering.groupingFactor || 1),
+            'Voltage Drop (%)': Number.isFinite(result.vDropPct) ? Number(result.vDropPct.toFixed(2)) : 'NOT CALCULATED',
+            'Voltage Drop Limit (%)': cableMaxDrop,
+            'PE Conductor': result.cable ? result.cable.pe : 'NOT SIZED',
+            'Fault Current at Cable (kA)': fault || 'DATA REQUIRED',
+            'Trip Time (s)': cableTripTime,
+            'Thermal Check': result.thermal ? result.thermal.status : 'NOT CALCULATED',
+            'Coordination Ib ≤ In ≤ Iz': result.coordination ? 'PASS' : 'FAIL / NOT SIZED',
+            'Overall Screening': result.overall || 'BLOCKED',
+            'Installation Method': engineering.installationMethod,
+            'Scope': 'Generic screening only; verify adopted code and manufacturer data'
+        };
+    });
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(cableRows), "Cable Verification");
+
     const faultKnown = engineering.sourceFaultKA !== '' && Number(engineering.sourceFaultKA) > 0;
     const icuKnown = engineering.mainBreakerIcuKA !== '' && Number(engineering.mainBreakerIcuKA) > 0;
     const engineeringRows = [
