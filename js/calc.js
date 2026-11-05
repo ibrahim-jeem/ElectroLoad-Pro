@@ -63,7 +63,7 @@ function recalculateAll() {
         const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
             Math.max(ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts)/Math.max(Number(item.pf)||0.01,0.01),0),0.01);
         const cableResult = mcbRating === null ? {valid:false,message:'Protective device is not sized.'} : calculateCableChecks({
-            designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance,
+            designCurrent:circuitCurrent, breakerRating:mcbRating, lengthM:ckt.distance, wireUnit:config.wireUnit,
             voltage:ckt.sup===3?config.voltageLL:config.voltageLN, phases:ckt.sup===3?3:1,
             maxVdrop:Number(engineering.cableMaxVdrop ?? (config.projectType==='Residential'?2.5:3)),
             installationMethod:engineering.cableMethod||'B2', loadedConductors:ckt.sup===3?3:2,
@@ -108,7 +108,7 @@ function recalculateAll() {
             <td class="py-2.5 px-3 text-slate-400">${curve}</td>
             <td class="py-2.5 px-3 text-emerald-400 font-bold">${recommendedWire.size}</td>
             <td class="py-2.5 px-3 text-slate-400">${recommendedWire.pe}</td>
-            <td class="py-2.5 px-3 text-slate-400">${config.wireUnit === 'Metric' ? 'BYA / NYY' : 'THHN / THWN'}</td>
+            <td class="py-2.5 px-3 text-slate-400">${'IEC 60364-5-52 PVC / Cu'}</td>
             <td class="py-2.5 px-3 ${isVdropWarning ? 'text-red-400 font-bold' : 'text-slate-300'}">${vDropPct.toFixed(2)}%</td>
             <td class="py-2.5 px-3 text-center">
                 ${isVdropWarning 
