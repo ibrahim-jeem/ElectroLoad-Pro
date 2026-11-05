@@ -51,10 +51,9 @@ function recalculateAll() {
         const mcbRating = selectBreakerRating(requiredBreakerRating);
         ckt.mcb = mcbRating;
 
-        // Trip Curve Suggestion
-        let curve = 'Type C';
-        if ([...ckt.categories].every(c => c === 'Lighting')) curve = 'Type B';
-        if (ckt.categories.has('Motors') || ckt.categories.has('HVAC')) curve = 'Type D';
+        // A trip curve cannot be selected safely from broad load labels alone.
+        // Inrush, minimum fault current, disconnection time and device curves are not modelled.
+        const curve = 'ENGINEER REVIEW';
 
         // Cable selection now uses the V2 reference-table engine; the legacy generic ampacity table is not used.
         const circuitPf = ckt.items.reduce((sum,item)=>sum + Number(item.qty)*Number(item.watts),0) /
