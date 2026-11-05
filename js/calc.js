@@ -222,7 +222,7 @@ function renderEngineeringStatus(mainMccb) {
  const source=Number(engineering.sourceFaultKA), icu=Number(engineering.mainBreakerIcuKA);
  const hasSource=engineering.sourceFaultKA!=='' && Number.isFinite(source) && source>0;
  const hasIcu=engineering.mainBreakerIcuKA!=='' && Number.isFinite(icu) && icu>0;
- const faultStatus=hasSource&&hasIcu ? (icu>=source ? '<span class="text-emerald-400 font-semibold">Entered MDB breaking capacity is not below entered prospective fault current</span>' : '<span class="text-red-400 font-semibold">FAIL — breaker breaking capacity is below entered MDB fault current</span>') : '<span class="text-amber-300 font-semibold">DATA REQUIRED — enter utility / study fault current and breaker Icu/Icn</span>';
+ const faultStatus=hasSource&&hasIcu ? (icu>=source ? '<span class="text-emerald-400 font-semibold">PASS — entered MDB Icu/Icn is not below entered prospective fault current</span>' : '<span class="text-red-400 font-semibold">FAIL — breaker breaking capacity is below entered MDB fault current</span>') : '<span class="text-amber-300 font-semibold">DATA REQUIRED — enter utility / study fault current and breaker Icu/Icn</span>';
  const ca=Number(engineering.cableAmbientFactor??1), cg=Number(engineering.cableGroupingFactor??1);
  const method=escapeHTML(engineering.cableMethod||'B2');
  host.innerHTML='<div class="rounded-lg border border-slate-700 bg-slate-950/70 p-3"><div class="text-slate-400 mb-1">Cable sizing V2 reference profile</div><div class="text-slate-100 font-semibold">'+method+' · Ca × Cg = '+(ca*cg).toFixed(3)+'</div><div class="text-slate-500 mt-1">IEC 60364-5-52 simplified unburied copper/PVC table; only verified 2-loaded-conductor columns enabled. Unsupported combinations are blocked.</div></div>'+
