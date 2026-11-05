@@ -22,6 +22,9 @@ function updateGrouping() {
 // System Configuration Updates
 function updateConfig() {
     config.standard = document.getElementById('standardSelect').value;
+    config.projectType = document.getElementById('projectTypeSelect')?.value || config.projectType || 'Residential';
+    const projectNote = document.getElementById('projectTypeNote');
+    if(projectNote) projectNote.textContent = config.projectType==='Residential' ? 'Residential profile: Bangladesh Power Division residential wiring guideline is a relevant local reference. Its stated scope is residential; verify project-specific requirements.' : config.projectType==='Commercial' ? 'Commercial profile: apply BNBC occupancy provisions and the adopted IEC/BS/NFPA design basis. No blanket commercial diversity multiplier is assumed.' : 'Industrial profile: use equipment nameplate data, motor starting, process duty, harmonics, fault level and industrial installation conditions. Residential defaults are not applied.';
     const systemPhase = document.getElementById('systemPhaseSelect').value;
     config.phase = systemPhase;
 
@@ -224,7 +227,7 @@ function renderBoardTable() {
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
             <td class="py-2 px-2"><input type="text" value="${escapeHTML(b.name)}" onchange="updateBoard('${b.id}', 'name', this.value.trim() || this.defaultValue)" class="w-28 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 font-sans focus:border-sky-500 focus:outline-none"><input type="text" aria-label="Board area" placeholder="Area" value="${escapeHTML(b.room || '')}" onchange="updateBoard('${b.id}', 'room', this.value.trim())" class="w-24 mt-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-400"></td>
-            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-300">MDB</span>' : `<select onchange="updateBoard('${b.id}', 'type', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${['MDB', 'SDB', 'SB', 'FDB', 'RDB'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
+            <td class="py-2 px-2">${isRoot ? '<span class="text-slate-300">MDB</span>' : `<select onchange="updateBoard('${b.id}', 'type', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${['MDB', 'FDB', 'DB', 'BDB', 'SDB', 'SB', 'RDB'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
             <td class="py-2 px-2">${isRoot ? '<span class="text-slate-400">Grid Supply</span>' : `<select onchange="updateBoard('${b.id}', 'par', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none">${parents.map(k => `<option value="${k.id}" ${b.par === k.id ? 'selected' : ''}>${escapeHTML(k.name)}</option>`).join('')}</select>`}</td>
             <td class="py-2 px-2"><select ${is3PSystem() ? '' : 'disabled'} onchange="updateBoard('${b.id}', 'sup', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-300 focus:outline-none"><option value="3" ${Number(b.sup) === 3 ? 'selected' : ''}>3&Phi;</option><option value="1" ${Number(b.sup) === 1 ? 'selected' : ''}>1&Phi;</option></select></td>
             <td class="py-2 px-2">${isRoot ? '&mdash;' : `<input type="number" min="1" value="${b.dist}" onchange="updateBoard('${b.id}', 'dist', parseFloat(this.value) || 1)" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-slate-200 focus:outline-none">`}</td>
