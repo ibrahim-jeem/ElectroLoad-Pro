@@ -42,7 +42,8 @@
   function refreshProjectPicker() {
     const picker=$('projectPicker'); if(!picker)return;
     const projects=readProjects();
-    picker.innerHTML='<option value="default">Current working project</option>'+projects.map(p=>'<option value="'+safe(p.meta?.id)+'">'+safe(p.meta?.name||'Untitled')+'</option>').join('');
+    const current=projects.find(p=>p.meta?.id==='default');
+    picker.innerHTML='<option value="default">'+safe(current?.meta?.name||'Current working project')+'</option>'+projects.filter(p=>p.meta?.id!=='default').map(p=>'<option value="'+safe(p.meta?.id)+'">'+safe(p.meta?.name||'Untitled')+'</option>').join('');
     picker.value=activeProjectId;
   }
   function saveNamedProject() {
