@@ -1,0 +1,68 @@
+# Cable Sizing Engine V2 — Engineering Basis
+
+## What the engine calculates
+
+For each circuit and board feeder, V2 follows this order:
+
+1. Determine design current from the circuit's entered watts, power factor, supply voltage and phase configuration. Residential loads covered by the Bangladesh Power Division guideline (fans, fluorescent lamps and small inductive loads up to 1 kW) receive the guideline's 1.65 current multiplier by default. The factor is visible and editable per fixture.
+2. Select the protective-device rating from the existing project breaker-selection logic.
+3. Select the smallest supported conductor whose corrected reference ampacity satisfies the coordination relationship:
+   - (I_b \le I_n \le I_z)
+   - (I_z = I_t \times C_a \times C_g)
+4. Check steady-state voltage drop:
+   - Single phase: \(\Delta U = 2 I L (R\cos\phi + X\sin\phi)\)
+   - Balanced three phase: \(\Delta U = \sqrt{3} I L (R\cos\phi + X\sin\phi)\)
+   - \(L\) is one-way cable length in km; \(R\) and \(X\) are in Ω/km.
+   - Copper resistance is adjusted from 20°C using \(R_\theta=R_{20}[1+0.00393(\theta-20)]\).
+5. Select a simplified PE size using the IEC 60364-5-54 cross-section relationship, with the Bangladesh residential guideline's 4 mm² ECC minimum applied in the BNBC/Residential profile.
+6. Where a fault current and disconnection time are entered, screen short-circuit thermal withstand with \(S \ge I\sqrt{t}/k\). The enabled Cu/PVC screening coefficient is \(k=115\).
+7. Compare the entered breaker breaking capacity with the entered prospective fault current at the same check point. This is only a simple entered-value comparison, not a downstream short-circuit study.
+
+## Project type and diversity
+
+Residential, Commercial and Industrial are project-context selections, not automatic multipliers. The Power Division guideline says diversity should be considered at circuit / floor / building / complex levels but does not prescribe one universal factor for every load category. V2 therefore removes the former undocumented automatic 0.90 / 0.70 / 0.85 factors. Each fixture now has an explicit, editable demand factor, defaulting to 1.00. The engineer must document the basis of any diversity factor entered.
+
+For Residential projects, the Bangladesh guideline's 1.65 current factor is applied by default to fixture names containing fan or fluorescent and to motor-category loads up to 1 kW. It remains editable per load. Do not apply it blindly to all loads.
+
+## Ampacity data and limitations
+
+The enabled ampacity dataset transcribes the first seven 2-loaded-conductor PVC copper columns of Schneider Electric's simplified IEC 60364-5-52 Table C.52.1 presentation (A1, A2, B1, B2, C, E and F). The original source presents a complex multi-row header for conductor count and insulation. Its flattened web extraction did not preserve all 3-loaded-conductor / XLPE column relationships reliably enough to encode without risk. Accordingly:
+
+- 2 loaded conductors, copper, PVC: enabled for the supported reference methods.
+- 3 loaded conductors: blocked pending verification of the correct 3-loaded-conductor column.
+- XLPE and aluminium: blocked pending a verified compatible table.
+- AWG/NEC mode: blocked in this IEC metric engine; a separate NEC ampacity profile is required.
+- Ambient and grouping correction factors remain explicit engineer inputs. V2 does not pretend to infer them from incomplete site information.
+- Buried cables, soil thermal resistivity, thermal insulation, solar heating, harmonics, parallel conductors and IEC 60287 detailed thermal calculations are not implemented.
+
+A blocked result is intentional: it is safer than presenting an unsupported conductor size as an engineering recommendation.
+
+## Bangladesh residential rules represented
+
+The Bangladesh Power Division's approved *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories* guideline states, within its residential scope:
+
+- 230 V single-phase and 400 V three-phase nominal supply, 50 Hz.
+- Current multiplier 1.65 for fluorescent lamps, fans and small inductive loads up to 1 kW; higher motor loads need a higher factor determined from equipment data.
+- Minimum copper conductor sizes by protective-device rating: 5 A → 1.5 mm²; 10 A → 2.5 mm²; 15 A → 4 mm²; 20 A → 6 mm².
+- Voltage drop not exceeding 2.5% from a distribution point to the farthest load point.
+- Phase and neutral conductors of the same size.
+- Minimum 4 mm² copper ECC.
+
+For non-tabulated breaker ratings, the app applies a conservative threshold mapping to the next lower listed rating (e.g. 16 A uses the 15 A / 4 mm² floor). This is an explicit application policy and must be checked against the actual design authority / adopted requirements.
+
+## Distribution board hierarchy
+
+The board type list now includes MDB, FDB, DB, SDB, BDB, SB and RDB. The Power Division guideline identifies FDB, DB, SDB, BDB and MDB in its distribution-board sections and symbols. Board hierarchy validation still checks parent links, phase compatibility and cycles.
+
+## Not a compliance certificate
+
+V2 is a transparent design-assistance and screening engine. It does not certify BNBC, BDS IEC, IEC, BS 7671 or NEC compliance. Before construction, an electrical engineer must verify the actual equipment nameplates, cable manufacturer's datasheets, installation conditions, protective-device curves, maximum/minimum fault levels, ADS / earth-fault loop impedance, disconnection times, selectivity, thermal withstand and all authority-specific requirements.
+
+## Primary references
+
+1. Bangladesh Power Division, *Electrical Wiring in Residential Buildings & Specification of Electrical Cable, Fittings and Accessories*, approved by circular dated 15 December 2021. Relevant sections include 3.2.2.1–3.2.3, 3.5.2–3.5.4, 3.5.7, and the cable capacity appendix.
+2. Bangladesh National Building Code 2020, published in the Bangladesh Gazette, S.R.O. No. 55-Law/2020.
+3. Schneider Electric, *Electrical Installation Guide*, “Recommended simplified approach for cable sizing” — IEC 60364-5-52 Table C.52.1 / Fig. G21 and grouping reduction factors.
+4. Schneider Electric, *Electrical Installation Guide*, “Calculation of voltage drop in steady load conditions”.
+5. IEC 60364-4-43, protection against overcurrent and short-circuit thermal withstand; IEC 60364-5-54, protective conductor sizing.
+6. IEC 60287-1-1:2023, detailed steady-state cable current-rating calculations. V2 does not implement the full IEC 60287 thermal model.
