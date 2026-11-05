@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,34 +17,44 @@
 
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+<body
+    class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 lg:px-8 py-3 no-print">
+    <header
+        class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 lg:px-8 py-3 no-print">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg shadow-sky-500/20 text-white">
+                <div
+                    class="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg shadow-sky-500/20 text-white">
                     <i class="fa-solid fa-bolt text-xl"></i>
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
-                        ElectroLoad Pro <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">v2</span>
+                        ElectroLoad Pro <span
+                            class="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">v2</span>
                     </h1>
                     <p class="text-xs text-slate-400">Preliminary Load Estimates & Conceptual SLD</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <button onclick="toggleFormulaModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2 transition">
-                    <i class="fa-solid fa-square-root-variable text-sky-400"></i> <span class="hidden md:inline">Formulas</span>
+                <button onclick="toggleFormulaModal()"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-square-root-variable text-sky-400"></i> <span
+                        class="hidden md:inline">Formulas</span>
                 </button>
-                <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold border border-emerald-600 flex items-center gap-2 shadow-sm transition">
+                <button onclick="exportToExcel()"
+                    class="px-3 py-2 bg-emerald-700/80 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold border border-emerald-600 flex items-center gap-2 shadow-sm transition">
                     <i class="fa-solid fa-file-excel"></i> <span class="hidden md:inline">Export Excel</span>
                 </button>
-                <button onclick="window.print()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2 transition">
+                <button onclick="window.print()"
+                    class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-2 transition">
                     <i class="fa-solid fa-print text-amber-400"></i> <span class="hidden md:inline">Print Report</span>
                 </button>
-                <button onclick="resetProject()" class="px-3 py-2 bg-red-950/60 hover:bg-red-900 text-red-300 rounded-lg text-xs font-semibold border border-red-800 flex items-center gap-1.5 transition">
+                <button onclick="resetProject()"
+                    class="px-3 py-2 bg-red-950/60 hover:bg-red-900 text-red-300 rounded-lg text-xs font-semibold border border-red-800 flex items-center gap-1.5 transition">
                     <i class="fa-solid fa-rotate-left"></i>
                 </button>
             </div>
@@ -55,21 +66,41 @@
 
         <!-- Project Management / Module 5 -->
         <section id="projectManager" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl no-print">
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-sm font-bold uppercase tracking-wider text-slate-100"><i class="fa-solid fa-folder-open text-sky-400 mr-2"></i>Project Workspace</h2><p class="text-xs text-slate-400 mt-1">Save named projects locally, reopen them, or exchange a portable project backup.</p></div><div class="flex flex-wrap gap-2"><button id="projectNewBtn" class="workspace-btn">New</button><button id="projectSaveBtn" class="workspace-btn workspace-btn-primary">Save Project</button><button id="projectExportBtn" class="workspace-btn">Export .elpro.json</button><label class="workspace-btn cursor-pointer">Import<input id="projectImportInput" type="file" accept=".json,.elpro.json,application/json" class="hidden"></label></div></div>
-          <div id="projectDesignBasis" class="rounded-xl border border-sky-700/40 bg-slate-950/50 p-3 mb-4">
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="min-w-0 flex-1"><h3 class="font-bold text-slate-100 text-xs uppercase tracking-wider"><i class="fa-solid fa-building text-sky-400 mr-2"></i>Project Design Basis</h3><p class="text-[11px] text-slate-400 mt-1">Select the building category. No undocumented demand or derating factors are assumed.</p></div>
-              <label class="text-xs text-slate-300 w-full sm:w-56">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Residential">Residential</option><option value="Commercial">Commercial</option><option value="Industrial">Industrial</option></select></label>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-100"><i
+                            class="fa-solid fa-folder-open text-sky-400 mr-2"></i>Project Workspace</h2>
+                    <p class="text-xs text-slate-400 mt-1">Save named projects locally, reopen them, or exchange a
+                        portable project backup.</p>
+                </div>
+                <div class="flex flex-wrap gap-2"><button id="projectNewBtn" class="workspace-btn">New</button><button
+                        id="projectSaveBtn" class="workspace-btn workspace-btn-primary">Save Project</button><button
+                        id="projectExportBtn" class="workspace-btn">Export .elpro.json</button><label
+                        class="workspace-btn cursor-pointer">Import<input id="projectImportInput" type="file"
+                            accept=".json,.elpro.json,application/json" class="hidden"></label></div>
             </div>
-            <p id="projectTypeNote" class="text-[11px] text-amber-300 mt-2">Residential: Bangladesh Power Division residential wiring guideline is a relevant local reference within its stated scope.</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 text-xs"><label class="text-slate-400">Project name<input id="projectName" class="workspace-input" placeholder="e.g. Gulshan Residence"></label><label class="text-slate-400">Client<input id="projectClient" class="workspace-input" placeholder="Client / organization"></label><label class="text-slate-400">Site location<input id="projectLocation" class="workspace-input" placeholder="Project address"></label><label class="text-slate-400">Prepared by<input id="projectDesigner" class="workspace-input" placeholder="Engineer / designer"></label><label class="text-slate-400">Drawing number<input id="projectDrawingNo" class="workspace-input" placeholder="ELP-E-001"></label><label class="text-slate-400">Revision<input id="projectRevision" class="workspace-input" value="A"></label></div>
-          <div class="flex flex-wrap items-center gap-3 mt-3 text-xs"><label class="text-slate-400">Saved projects<select id="projectPicker" class="workspace-input min-w-56"><option value="default">Current working project</option></select></label><span id="projectManagerStatus" class="text-emerald-300" aria-live="polite">Autosave active in this browser</span></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 text-xs">
+                <label class="text-slate-400">Saved projects<select id="projectPicker" class="workspace-input min-w-56">
+                    <option value="default">Current working project</option></select></label>
+                    <span id="projectManagerStatus" class="text-emerald-300" aria-live="polite">Autosave active in this browser</span>
+                </div>
+                <label class="text-xs text-slate-300 w-full sm:w-56">Project type<select id="projectTypeSelect" onchange="updateConfig()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Industrial">Industrial</option></select></label>
+                <label class="text-slate-400">Project name<input id="projectName" class="workspace-input" placeholder="e.g. Gulshan Residence"></label>
+                <label class="text-slate-400">Client<input id="projectClient" class="workspace-input" placeholder="Client / organization"></label>
+                <label class="text-slate-400">Site location<input id="projectLocation" class="workspace-input" placeholder="Project address"></label>
+                <label class="text-slate-400">Prepared by<input id="projectDesigner" class="workspace-input" placeholder="Engineer / designer"></label>
+                <label class="text-slate-400">Drawing number<input id="projectDrawingNo" class="workspace-input" placeholder="ELP-E-001"></label>
+                <label class="text-slate-400">Revision<input id="projectRevision" class="workspace-input" value="A"></label>
+            </div>
         </section>
         <!-- System & Configuration Bar -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden no-print">
+        <section
+            class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden no-print">
             <div class="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
-            
+
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
                 <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
                     <i class="fa-solid fa-sliders text-sky-400"></i> System Parameters & Electrical Standard
@@ -82,7 +113,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                 <div>
                     <label class="block text-slate-400 font-medium mb-1.5">Compliance Standard</label>
-                    <select id="standardSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <select id="standardSelect" onchange="updateConfig()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="BNBC">BNBC (Bangladesh — reference only)</option>
                         <option value="NFPA">NFPA / NEC (USA — reference only)</option>
                         <option value="IEC">IEC 60364 (reference only)</option>
@@ -91,7 +123,8 @@
 
                 <div>
                     <label class="block text-slate-400 font-medium mb-1.5">Supply Configuration</label>
-                    <select id="systemPhaseSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <select id="systemPhaseSelect" onchange="updateConfig()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="3P">3-Phase (400V / 230V Line-Neutral)</option>
                         <option value="3P-208">3-Phase (208V / 120V US)</option>
                         <option value="1P">1-Phase (230V)</option>
@@ -101,7 +134,8 @@
 
                 <div>
                     <label class="block text-slate-400 font-medium mb-1.5">System Frequency</label>
-                    <select id="freqSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <select id="freqSelect" onchange="updateConfig()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="50">50 Hz</option>
                         <option value="60">60 Hz</option>
                     </select>
@@ -109,7 +143,8 @@
 
                 <div>
                     <label class="block text-slate-400 font-medium mb-1.5">Wire Standard Gauge</label>
-                    <select id="wireUnitSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <select id="wireUnitSelect" onchange="updateConfig()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="Metric">Metric (rm / mm²) [BYA / NYY]</option>
                         <option value="AWG" disabled>AWG / kcmil (V2 profile not enabled)</option>
                     </select>
@@ -117,7 +152,8 @@
 
                 <div id="breakerMarginControl">
                     <label class="block text-slate-400 font-medium mb-1.5">Additional Breaker Margin</label>
-                    <select id="safetyFactorSelect" onchange="updateConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <select id="safetyFactorSelect" onchange="updateConfig()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
                         <option value="1.25">1.25x (only when required by code / equipment)</option>
                         <option value="1.15">1.15x (documented project margin)</option>
                         <option value="1">1.00x (no additional margin)</option>
@@ -172,21 +208,26 @@
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phase Unbalance</span>
                 <div class="mt-2 flex items-baseline justify-between">
                     <span class="text-2xl font-extrabold text-slate-100 font-mono" id="imbalanceVal">0.0%</span>
-                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400" id="imbalanceBadge">OK</span>
+                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400"
+                        id="imbalanceBadge">OK</span>
                 </div>
             </div>
         </section>
 
         <!-- Distribution Board Hierarchy (MDB / SDB / SB / FDB / RDB) -->
-        <section id="boardHierarchySection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
+        <section id="boardHierarchySection"
+            class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
                 <div>
                     <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
-                        <i class="fa-solid fa-sitemap text-amber-400"></i> Distribution Board Hierarchy (MDB &rarr; FDB &rarr; DB &rarr; BDB)
+                        <i class="fa-solid fa-sitemap text-amber-400"></i> Distribution Board Hierarchy (MDB &rarr; FDB
+                        &rarr; DB &rarr; BDB)
                     </h2>
-                    <p class="text-xs text-slate-400">Add FDB, DB, BDB, SDB or other levels. Each board gets a feeder breaker, cable and voltage-drop estimate.</p>
+                    <p class="text-xs text-slate-400">Add FDB, DB, BDB, SDB or other levels. Each board gets a feeder
+                        breaker, cable and voltage-drop estimate.</p>
                 </div>
-                <button onclick="addBoard()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm no-print">
+                <button onclick="addBoard()"
+                    class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm no-print">
                     <i class="fa-solid fa-plus"></i> Add Board
                 </button>
             </div>
@@ -214,163 +255,183 @@
 
         <!-- Main Workspace Grid: Left = Loads, Right = Phase Balancing & Busbar -->
 
-            <!-- Fixtures & Load Entry Section (7 Cols) -->
-            <section class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+        <!-- Fixtures & Load Entry Section (7 Cols) -->
+        <section class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
+                        <i class="fa-solid fa-list-check text-sky-400"></i> Electrical Fixture Schedule
+                    </h2>
+                    <p class="text-xs text-slate-400">Add custom fixtures or presets. Current and demand factors are
+                        explicit per-load inputs.</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="openPresetModal()"
+                        class="px-3 py-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 border border-sky-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-bolt-lightning"></i> Fast Presets
+                    </button>
+                    <button onclick="addNewFixtureRow()"
+                        class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fa-solid fa-plus"></i> Add Item
+                    </button>
+                </div>
+            </div>
+
+            <!-- Circuit Grouping & Room Strategy -->
+            <div id="groupingControls"
+                class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+                <label class="flex items-center justify-between gap-3 cursor-pointer">
+                    <span>
+                        <span class="block font-semibold text-slate-200">Auto Circuit Grouping</span>
+                        <span class="block text-[11px] text-slate-400" id="groupModeLabel">ON: CKT-1, CKT-2... allocated
+                            by breaker capacity</span>
+                    </span>
+                    <span class="relative inline-flex items-center shrink-0">
+                        <input type="checkbox" id="autoGroupToggle" class="sr-only peer" checked
+                            onchange="updateGrouping()">
+                        <span
+                            class="w-10 h-5 bg-slate-700 rounded-full peer-checked:bg-sky-600 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-5"></span>
+                    </span>
+                </label>
+                <label id="roomToggleWrap" class="flex items-center justify-between gap-3 cursor-pointer">
+                    <span>
+                        <span class="block font-semibold text-slate-200">Auto Room Consolidation</span>
+                        <span class="block text-[11px] text-slate-400">Group loads by their Room / Location tag</span>
+                    </span>
+                    <span class="relative inline-flex items-center shrink-0">
+                        <input type="checkbox" id="roomConsolidateToggle" class="sr-only peer" checked
+                            onchange="updateGrouping()">
+                        <span
+                            class="w-10 h-5 bg-slate-700 rounded-full peer-checked:bg-sky-600 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-5"></span>
+                    </span>
+                </label>
+                <div id="strategyWrap">
+                    <label class="block text-slate-400 font-medium mb-1">Room Strategy</label>
+                    <select id="roomStrategySelect" onchange="updateGrouping()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="combine">Combine low-power appliances into 1 CKT per room</option>
+                        <option value="separate">Separate CKT for every appliance</option>
+                    </select>
+                </div>
+                <p class="md:col-span-3 text-[11px] text-slate-500 leading-tight">
+                    <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Low-power = up to 500 W per unit (not HVAC
+                    / motor); combined circuits are capped at a 16 A MCB after the safety factor. Heavy loads always get
+                    a dedicated CKT. With grouping OFF, type a CKT name per row to assign manually.
+                </p>
+            </div>
+            <datalist id="roomList"></datalist>
+            <datalist id="cktList"></datalist>
+
+            <!-- Load Items Table -->
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 font-semibold uppercase bg-slate-950/50">
+                            <th class="py-2.5 px-2">Fixture / Circuit Name</th>
+                            <th class="py-2.5 px-2 w-28">Room / Location</th>
+                            <th class="py-2.5 px-2 w-24">Board</th>
+                            <th class="py-2.5 px-2">Category</th>
+                            <th class="py-2.5 px-2 w-16 text-center">Qty</th>
+                            <th class="py-2.5 px-2 w-20">Watts</th>
+                            <th class="py-2.5 px-2 w-16">P.F.</th>
+                            <th class="py-2.5 px-2 w-16">I Factor</th>
+                            <th class="py-2.5 px-2 w-16">Demand Factor</th>
+                            <th class="py-2.5 px-2 w-16">Dist(m)</th>
+                            <th class="py-2.5 px-2 w-16">Supply</th>
+                            <th class="py-2.5 px-2 w-20">Circuit</th>
+                            <th class="py-2.5 px-2 w-20">Phase</th>
+                            <th class="py-2.5 px-2 text-right w-12">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fixtureTableBody" class="divide-y divide-slate-800/60 font-sans">
+                        <!-- JS Dynamic Insertion -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase Balancer & Live Busbar Monitor (5 Cols) -->
+        <section
+            class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
                     <div>
                         <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <i class="fa-solid fa-list-check text-sky-400"></i> Electrical Fixture Schedule
+                            <i class="fa-solid fa-chart-simple text-amber-400"></i> Live Busbar & Phase Load
                         </h2>
-                        <p class="text-xs text-slate-400">Add custom fixtures or presets. Current and demand factors are explicit per-load inputs.</p>
+                        <p class="text-xs text-slate-400">Real-time load distribution across phases</p>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <button onclick="openPresetModal()" class="px-3 py-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 border border-sky-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-                            <i class="fa-solid fa-bolt-lightning"></i> Fast Presets
-                        </button>
-                        <button onclick="addNewFixtureRow()" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                            <i class="fa-solid fa-plus"></i> Add Item
-                        </button>
-                    </div>
+                    <button id="autoBalanceBtn" onclick="autoBalancePhases()"
+                        class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Balance
+                    </button>
                 </div>
 
-                <!-- Circuit Grouping & Room Strategy -->
-                <div id="groupingControls" class="mb-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
-                    <label class="flex items-center justify-between gap-3 cursor-pointer">
-                        <span>
-                            <span class="block font-semibold text-slate-200">Auto Circuit Grouping</span>
-                            <span class="block text-[11px] text-slate-400" id="groupModeLabel">ON: CKT-1, CKT-2... allocated by breaker capacity</span>
-                        </span>
-                        <span class="relative inline-flex items-center shrink-0">
-                            <input type="checkbox" id="autoGroupToggle" class="sr-only peer" checked onchange="updateGrouping()">
-                            <span class="w-10 h-5 bg-slate-700 rounded-full peer-checked:bg-sky-600 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-5"></span>
-                        </span>
-                    </label>
-                    <label id="roomToggleWrap" class="flex items-center justify-between gap-3 cursor-pointer">
-                        <span>
-                            <span class="block font-semibold text-slate-200">Auto Room Consolidation</span>
-                            <span class="block text-[11px] text-slate-400">Group loads by their Room / Location tag</span>
-                        </span>
-                        <span class="relative inline-flex items-center shrink-0">
-                            <input type="checkbox" id="roomConsolidateToggle" class="sr-only peer" checked onchange="updateGrouping()">
-                            <span class="w-10 h-5 bg-slate-700 rounded-full peer-checked:bg-sky-600 transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-5"></span>
-                        </span>
-                    </label>
-                    <div id="strategyWrap">
-                        <label class="block text-slate-400 font-medium mb-1">Room Strategy</label>
-                        <select id="roomStrategySelect" onchange="updateGrouping()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <option value="combine">Combine low-power appliances into 1 CKT per room</option>
-                            <option value="separate">Separate CKT for every appliance</option>
-                        </select>
-                    </div>
-                    <p class="md:col-span-3 text-[11px] text-slate-500 leading-tight">
-                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Low-power = up to 500 W per unit (not HVAC / motor); combined circuits are capped at a 16 A MCB after the safety factor. Heavy loads always get a dedicated CKT. With grouping OFF, type a CKT name per row to assign manually.
-                    </p>
-                </div>
-                <datalist id="roomList"></datalist>
-                <datalist id="cktList"></datalist>
-
-                <!-- Load Items Table -->
-                <div class="overflow-x-auto flex-1">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-800 text-slate-400 font-semibold uppercase bg-slate-950/50">
-                                <th class="py-2.5 px-2">Fixture / Circuit Name</th>
-                                <th class="py-2.5 px-2 w-28">Room / Location</th>
-                                <th class="py-2.5 px-2 w-24">Board</th>
-                                <th class="py-2.5 px-2">Category</th>
-                                <th class="py-2.5 px-2 w-16 text-center">Qty</th>
-                                <th class="py-2.5 px-2 w-20">Watts</th>
-                                <th class="py-2.5 px-2 w-16">P.F.</th>
-                                <th class="py-2.5 px-2 w-16">I Factor</th>
-                                <th class="py-2.5 px-2 w-16">Demand Factor</th>
-                                <th class="py-2.5 px-2 w-16">Dist(m)</th>
-                                <th class="py-2.5 px-2 w-16">Supply</th>
-                                <th class="py-2.5 px-2 w-20">Circuit</th>
-                                <th class="py-2.5 px-2 w-20">Phase</th>
-                                <th class="py-2.5 px-2 text-right w-12">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fixtureTableBody" class="divide-y divide-slate-800/60 font-sans">
-                            <!-- JS Dynamic Insertion -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Phase Balancer & Live Busbar Monitor (5 Cols) -->
-            <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                        <div>
-                            <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <i class="fa-solid fa-chart-simple text-amber-400"></i> Live Busbar & Phase Load
-                            </h2>
-                            <p class="text-xs text-slate-400">Real-time load distribution across phases</p>
+                <!-- Phase Visual Bars -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
+                    <!-- Phase R -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-red-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Phase R (Red)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseR_stats">0.00 kW | 0.0 A</span>
                         </div>
-
-                        <button id="autoBalanceBtn" onclick="autoBalancePhases()" class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Balance
-                        </button>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseR_bar" class="bg-red-500 h-full transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
                     </div>
 
-                    <!-- Phase Visual Bars -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-2">
-                        <!-- Phase R -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-red-400 flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Phase R (Red)
-                                </span>
-                                <span class="font-mono text-slate-300" id="phaseR_stats">0.00 kW | 0.0 A</span>
-                            </div>
-                            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                                <div id="phaseR_bar" class="bg-red-500 h-full transition-all duration-300" style="width: 0%"></div>
-                            </div>
+                    <!-- Phase Y -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Phase Y
+                                (Yellow)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseY_stats">0.00 kW | 0.0 A</span>
                         </div>
-
-                        <!-- Phase Y -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-amber-400 flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Phase Y (Yellow)
-                                </span>
-                                <span class="font-mono text-slate-300" id="phaseY_stats">0.00 kW | 0.0 A</span>
-                            </div>
-                            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                                <div id="phaseY_bar" class="bg-amber-400 h-full transition-all duration-300" style="width: 0%"></div>
-                            </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseY_bar" class="bg-amber-400 h-full transition-all duration-300"
+                                style="width: 0%"></div>
                         </div>
+                    </div>
 
-                        <!-- Phase B -->
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-blue-400 flex items-center gap-1.5">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Phase B (Blue)
-                                </span>
-                                <span class="font-mono text-slate-300" id="phaseB_stats">0.00 kW | 0.0 A</span>
-                            </div>
-                            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-                                <div id="phaseB_bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
-                            </div>
+                    <!-- Phase B -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-blue-400 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Phase B (Blue)
+                            </span>
+                            <span class="font-mono text-slate-300" id="phaseB_stats">0.00 kW | 0.0 A</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                            <div id="phaseB_bar" class="bg-blue-500 h-full transition-all duration-300"
+                                style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-2 mt-4">
-                    <div class="flex justify-between text-slate-400">
-                        <span>Neutral Current (Est.):</span>
-                        <span class="font-mono text-slate-200" id="neutralCurrentVal">0.00 A</span>
-                    </div>
-                    <div class="flex justify-between text-slate-400">
-                        <span>Max Phase Deviation:</span>
-                        <span class="font-mono text-slate-200" id="phaseDeviationVal">0.00 A</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 leading-tight">
-                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Current-unbalance indicator uses maximum deviation from average phase current. Review against equipment and utility limits; harmonics and neutral heating are not modelled.
-                    </p>
+            <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs space-y-2 mt-4">
+                <div class="flex justify-between text-slate-400">
+                    <span>Neutral Current (Est.):</span>
+                    <span class="font-mono text-slate-200" id="neutralCurrentVal">0.00 A</span>
                 </div>
-            </section>
+                <div class="flex justify-between text-slate-400">
+                    <span>Max Phase Deviation:</span>
+                    <span class="font-mono text-slate-200" id="phaseDeviationVal">0.00 A</span>
+                </div>
+                <p class="text-[11px] text-slate-500 leading-tight">
+                    <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i> Current-unbalance indicator uses maximum
+                    deviation from average phase current. Review against equipment and utility limits; harmonics and
+                    neutral heating are not modelled.
+                </p>
+            </div>
+        </section>
         </div>
 
         <!-- Calculated Engineering Schedule Table (Breakers, Wire Sizing, Drop %) -->
@@ -378,12 +439,15 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
                 <div>
                     <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
-                        <i class="fa-solid fa-calculator text-emerald-400"></i> Auto-Calculated Breaker & Wire Sizing Schedule
+                        <i class="fa-solid fa-calculator text-emerald-400"></i> Auto-Calculated Breaker & Wire Sizing
+                        Schedule
                     </h2>
-                    <p class="text-xs text-slate-400">Preliminary sizing estimates only — no verified standards or fault-protection compliance</p>
+                    <p class="text-xs text-slate-400">Preliminary sizing estimates only — no verified standards or
+                        fault-protection compliance</p>
                 </div>
                 <div class="flex items-center gap-2 text-xs">
-                    <span class="px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Max V-Drop: 3.0%</span>
+                    <span class="px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Max V-Drop:
+                        3.0%</span>
                 </div>
             </div>
 
@@ -411,34 +475,106 @@
         </section>
 
         <!-- Distribution Board Schedule / Module 4 -->
-        <section id="dbScheduleSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden"><div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800"><div><h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i class="fa-solid fa-table-list text-emerald-400 mr-2"></i>Distribution Board Schedule</h2><p class="text-xs text-slate-400 mt-1">Board-wise outgoing circuits, phase allocation, protective devices, cable selections and feeder summary.</p></div><span id="dbScheduleCount" class="text-xs text-slate-400"></span></div><div class="overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-950/70 text-slate-400 uppercase"><th class="p-2">Board</th><th class="p-2">Type</th><th class="p-2">Way / CKT</th><th class="p-2">Load description</th><th class="p-2">Phase</th><th class="p-2">Load</th><th class="p-2">Ib</th><th class="p-2">Breaker</th><th class="p-2">Cable</th><th class="p-2">V-Drop</th><th class="p-2">Check</th></tr></thead><tbody id="dbScheduleBody" class="divide-y divide-slate-800/70"></tbody></table></div></section>
+        <section id="dbScheduleSection"
+            class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+                <div>
+                    <h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i
+                            class="fa-solid fa-table-list text-emerald-400 mr-2"></i>Distribution Board Schedule</h2>
+                    <p class="text-xs text-slate-400 mt-1">Board-wise outgoing circuits, phase allocation, protective
+                        devices, cable selections and feeder summary.</p>
+                </div><span id="dbScheduleCount" class="text-xs text-slate-400"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-950/70 text-slate-400 uppercase">
+                            <th class="p-2">Board</th>
+                            <th class="p-2">Type</th>
+                            <th class="p-2">Way / CKT</th>
+                            <th class="p-2">Load description</th>
+                            <th class="p-2">Phase</th>
+                            <th class="p-2">Load</th>
+                            <th class="p-2">Ib</th>
+                            <th class="p-2">Breaker</th>
+                            <th class="p-2">Cable</th>
+                            <th class="p-2">V-Drop</th>
+                            <th class="p-2">Check</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbScheduleBody" class="divide-y divide-slate-800/70"></tbody>
+                </table>
+            </div>
+        </section>
         <!-- Cable Sizing Engine v2 -->
-        <section id="cableSizingSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
+        <section id="cableSizingSection"
+            class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
                 <div>
                     <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
                         <i class="fa-solid fa-ruler-combined text-cyan-400"></i> Cable Sizing & Verification Engine
                     </h2>
-                    <p class="text-xs text-slate-400">Reference ampacity · correction factors · voltage drop · PE sizing · short-circuit thermal check</p>
+                    <p class="text-xs text-slate-400">Reference ampacity · correction factors · voltage drop · PE sizing
+                        · short-circuit thermal check</p>
                 </div>
-                <span class="px-2 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">ENGINEERING SCREENING — NOT CERTIFICATION</span>
+                <span
+                    class="px-2 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">ENGINEERING
+                    SCREENING — NOT CERTIFICATION</span>
             </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 text-xs">
-<label class="text-slate-400">Max voltage drop (%)<input id="cableMaxVdrop" type="number" min="0.1" max="10" step="0.1" value="2.5" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Installation method<select id="cableMethod" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2" selected>B2</option><option value="C">C</option><option value="E">E</option><option value="F">F</option></select></label>
-<div class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-slate-400">Loaded conductors: <strong class="text-slate-200">automatic</strong><span class="block text-[10px] text-slate-500 mt-1">2 for single-phase, 3 for three-phase</span></div>
-<label class="text-slate-400">Material<select id="cableMaterial" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="Cu">Copper</option><option value="Al">Aluminium (not enabled)</option></select></label>
-<label class="text-slate-400">Insulation<select id="cableInsulation" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"><option value="PVC">PVC (k=115 Cu)</option><option value="XLPE">XLPE (not enabled)</option></select></label>
-<label class="text-slate-400">Ambient factor Ca<input id="cableAmbientFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Grouping factor Cg<input id="cableGroupingFactor" type="number" min="0.1" max="1.5" step="0.01" value="1" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Conductor temperature (°C)<input id="cableTemp" type="number" min="20" max="70" value="70" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Power factor<input id="cablePowerFactor" type="number" min="0.1" max="1" step="0.01" value="" placeholder="Auto from circuit load PF" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Reactance (Ω/km)<input id="cableReactance" type="number" min="0" step="0.001" value="0.08" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<label class="text-slate-400">Thermal trip time (s)<input id="cableTripTime" type="number" min="0.01" max="5" step="0.01" value="0.4" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
-<div class="text-[11px] text-slate-400 rounded-lg border border-slate-800 bg-slate-950 p-3">Fault current and breaker Icu/Icn are entered per circuit below. Use the same prospective-fault-current point and the selected breaker manufacturer data.</div>
-<div class="rounded-lg bg-slate-950 border border-slate-800 p-3"><span class="text-slate-500">Ampacity source</span><strong id="cableTableMode" class="block text-cyan-300 mt-1">IEC 60364-5-52 B.52.2 / B.52.4</strong></div>
-</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 text-xs">
+                <label class="text-slate-400">Max voltage drop (%)<input id="cableMaxVdrop" type="number" min="0.1"
+                        max="10" step="0.1" value="2.5"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Installation method<select id="cableMethod"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+                        <option value="A1">A1</option>
+                        <option value="A2">A2</option>
+                        <option value="B1">B1</option>
+                        <option value="B2" selected>B2</option>
+                        <option value="C">C</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                    </select></label>
+                <div class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-slate-400">Loaded conductors:
+                    <strong class="text-slate-200">automatic</strong><span
+                        class="block text-[10px] text-slate-500 mt-1">2 for single-phase, 3 for three-phase</span>
+                </div>
+                <label class="text-slate-400">Material<select id="cableMaterial"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+                        <option value="Cu">Copper</option>
+                        <option value="Al">Aluminium (not enabled)</option>
+                    </select></label>
+                <label class="text-slate-400">Insulation<select id="cableInsulation"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100">
+                        <option value="PVC">PVC (k=115 Cu)</option>
+                        <option value="XLPE">XLPE (not enabled)</option>
+                    </select></label>
+                <label class="text-slate-400">Ambient factor Ca<input id="cableAmbientFactor" type="number" min="0.1"
+                        max="1.5" step="0.01" value="1"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Grouping factor Cg<input id="cableGroupingFactor" type="number" min="0.1"
+                        max="1.5" step="0.01" value="1"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Conductor temperature (°C)<input id="cableTemp" type="number" min="20"
+                        max="70" value="70"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Power factor<input id="cablePowerFactor" type="number" min="0.1" max="1"
+                        step="0.01" value="" placeholder="Auto from circuit load PF"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Reactance (Ω/km)<input id="cableReactance" type="number" min="0"
+                        step="0.001" value="0.08"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <label class="text-slate-400">Thermal trip time (s)<input id="cableTripTime" type="number" min="0.01"
+                        max="5" step="0.01" value="0.4"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100"></label>
+                <div class="text-[11px] text-slate-400 rounded-lg border border-slate-800 bg-slate-950 p-3">Fault
+                    current and breaker Icu/Icn are entered per circuit below. Use the same prospective-fault-current
+                    point and the selected breaker manufacturer data.</div>
+                <div class="rounded-lg bg-slate-950 border border-slate-800 p-3"><span class="text-slate-500">Ampacity
+                        source</span><strong id="cableTableMode" class="block text-cyan-300 mt-1">IEC 60364-5-52 B.52.2
+                        / B.52.4</strong></div>
+            </div>
             <div id="cableSizingSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4" aria-live="polite"></div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -457,11 +593,15 @@
                         </tr>
                     </thead>
                     <tbody id="cableSizingBody" class="divide-y divide-slate-800/60">
-                        <tr><td colspan="10" class="p-4 text-slate-500">Waiting for circuit calculations…</td></tr>
+                        <tr>
+                            <td colspan="10" class="p-4 text-slate-500">Waiting for circuit calculations…</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            <div id="cableSizingNotes" class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-[11px] text-slate-400 space-y-1" aria-live="polite"></div>
+            <div id="cableSizingNotes"
+                class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-[11px] text-slate-400 space-y-1"
+                aria-live="polite"></div>
         </section>
 
         <!-- Live Interactive Single Line Diagram (SLD) -->
@@ -471,10 +611,12 @@
                     <h2 class="font-bold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
                         <i class="fa-solid fa-diagram-project text-sky-400"></i> Dynamic Single-Line Diagram (SLD)
                     </h2>
-                    <p class="text-xs text-slate-400">Interactive navy drafting sheet · phase-aware feeders · separate N and PE · preliminary engineering checks</p>
+                    <p class="text-xs text-slate-400">Interactive navy drafting sheet · phase-aware feeders · separate N
+                        and PE · preliminary engineering checks</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="downloadSldSvg()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    <button onclick="downloadSldSvg()"
+                        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                         <i class="fa-solid fa-download text-sky-400"></i> SVG Download
                     </button>
                 </div>
@@ -482,23 +624,33 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-xs no-print" id="sldEngineeringInputs">
                 <label class="block text-slate-400">Drawing convention
-                    <select id="sldConvention" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
+                    <select id="sldConvention" onchange="updateEngineering()"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
                         <option value="IEC">IEC-inspired symbols</option>
                         <option value="ANSI">ANSI/NEMA-inspired symbols</option>
                     </select>
                 </label>
                 <label class="block text-slate-400">Prospective fault current at MDB (kA)
-                    <input id="sourceFaultKA" type="number" min="0" step="0.1" placeholder="Enter utility / study value" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
+                    <input id="sourceFaultKA" type="number" min="0" step="0.1" placeholder="Enter utility / study value"
+                        onchange="updateEngineering()"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
                 </label>
                 <label class="block text-slate-400">Main breaker Icu / Icn (kA)
-                    <input id="mainBreakerIcuKA" type="number" min="0" step="0.1" placeholder="From manufacturer's datasheet" onchange="updateEngineering()" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
+                    <input id="mainBreakerIcuKA" type="number" min="0" step="0.1"
+                        placeholder="From manufacturer's datasheet" onchange="updateEngineering()"
+                        class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-slate-100">
                 </label>
             </div>
-            <div id="sldEngineeringStatus" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4 text-xs" aria-live="polite"></div>
+            <div id="sldEngineeringStatus" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4 text-xs"
+                aria-live="polite"></div>
             <div class="flex flex-wrap gap-3 items-center text-[11px] mb-3 sld-legend">
-                <span><b class="text-red-400">R</b> Phase R</span><span><b class="text-amber-300">Y</b> Phase Y</span><span><b class="text-blue-400">B</b> Phase B</span><span><b class="text-slate-300">N</b> Neutral</span><span><b class="text-green-400">PE</b> Protective earth (green/yellow)</span>
+                <span><b class="text-red-400">R</b> Phase R</span><span><b class="text-amber-300">Y</b> Phase
+                    Y</span><span><b class="text-blue-400">B</b> Phase B</span><span><b class="text-slate-300">N</b>
+                    Neutral</span><span><b class="text-green-400">PE</b> Protective earth (green/yellow)</span>
                 <span class="text-slate-500">· Breaker and cable values are preliminary until verified.</span>
-                <button onclick="printSld()" class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 sld-no-print"><i class="fa-solid fa-file-pdf mr-1"></i> Print A3 SLD</button>
+                <button onclick="printSld()"
+                    class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 sld-no-print"><i
+                        class="fa-solid fa-file-pdf mr-1"></i> Print A3 SLD</button>
             </div>
             <!-- SLD Vector SVG Canvas -->
             <div id="sldViewport" class="sld-viewport w-full bg-slate-950 rounded-xl border border-slate-800 p-3">
@@ -509,20 +661,42 @@
         </section>
 
         <!-- Release QA checklist -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl no-print"><div class="mb-3"><h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i class="fa-solid fa-clipboard-check text-amber-400 mr-2"></i>Design Review Checklist</h2><p class="text-xs text-slate-400 mt-1">The app flags missing inputs; these items still require qualified engineering verification.</p></div><div id="projectReadinessChecks"></div></section>
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl no-print">
+            <div class="mb-3">
+                <h2 class="font-bold text-slate-200 text-sm uppercase tracking-wider"><i
+                        class="fa-solid fa-clipboard-check text-amber-400 mr-2"></i>Design Review Checklist</h2>
+                <p class="text-xs text-slate-400 mt-1">The app flags missing inputs; these items still require qualified
+                    engineering verification.</p>
+            </div>
+            <div id="projectReadinessChecks"></div>
+        </section>
 
         <!-- Advanced engineering controls -->
-        <section id="advancedEngineeringSection" class="bg-slate-900 border border-sky-800/50 rounded-2xl p-4 shadow-xl no-print"><label class="flex items-center justify-between gap-4 cursor-pointer"><span><strong class="text-sm text-slate-100 uppercase tracking-wider"><i class="fa-solid fa-gears text-sky-400 mr-2"></i>Advanced Engineering</strong><small class="block text-xs text-slate-400 mt-1">Optional controls: circuit grouping strategy, breaker margin, board hierarchy, detailed cable verification, fault inputs and drawing conventions.</small></span><span class="flex items-center gap-2 text-xs text-slate-300"><input id="advancedToggle" type="checkbox" role="switch" aria-controls="advancedPanel" aria-expanded="false" class="w-5 h-5 accent-sky-500"> Advanced tools</span></label><div id="advancedPanel" data-advanced-content class="mt-4 space-y-5" hidden></div></section>
+        <section id="advancedEngineeringSection"
+            class="bg-slate-900 border border-sky-800/50 rounded-2xl p-4 shadow-xl no-print"><label
+                class="flex items-center justify-between gap-4 cursor-pointer"><span><strong
+                        class="text-sm text-slate-100 uppercase tracking-wider"><i
+                            class="fa-solid fa-gears text-sky-400 mr-2"></i>Advanced Engineering</strong><small
+                        class="block text-xs text-slate-400 mt-1">Optional controls: circuit grouping strategy, breaker
+                        margin, board hierarchy, detailed cable verification, fault inputs and drawing
+                        conventions.</small></span><span class="flex items-center gap-2 text-xs text-slate-300"><input
+                        id="advancedToggle" type="checkbox" role="switch" aria-controls="advancedPanel"
+                        aria-expanded="false" class="w-5 h-5 accent-sky-500"> Advanced tools</span></label>
+            <div id="advancedPanel" data-advanced-content class="mt-4 space-y-5" hidden></div>
+        </section>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500 no-print mt-auto">
+    <footer
+        class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500 no-print mt-auto">
         <p>ElectroLoad Pro • Preliminary estimates — not a certified BNBC / IEC / NEC design</p>
     </footer>
 
     <!-- MODAL 1: Fast Presets Library -->
-    <div id="presetModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div id="presetModal"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div
+            class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closePresetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -533,78 +707,115 @@
 
             <div class="flex flex-wrap items-center gap-2 mb-3 text-xs">
                 <label class="text-slate-400 font-medium">Add to board</label>
-                <select id="presetBoard" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none"></select>
+                <select id="presetBoard"
+                    class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none"></select>
             </div>
-            <div id="presetGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[40vh] overflow-y-auto p-1"></div>
+            <div id="presetGrid"
+                class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[40vh] overflow-y-auto p-1"></div>
 
             <details class="mt-4 text-xs">
-                <summary class="cursor-pointer font-semibold text-sky-400">Edit fixture library (watts, power factor, 1&Phi; / 3&Phi;)</summary>
+                <summary class="cursor-pointer font-semibold text-sky-400">Edit fixture library (watts, power factor,
+                    1&Phi; / 3&Phi;)</summary>
                 <div class="mt-3 overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="border-b border-slate-800 text-slate-400 font-semibold uppercase bg-slate-950/50">
-                                <th class="py-2 px-2">Fixture</th><th class="py-2 px-2">Category</th><th class="py-2 px-2 w-20">Watts</th><th class="py-2 px-2 w-16">P.F.</th><th class="py-2 px-2 w-16">Supply</th><th class="py-2 px-2 w-10"></th>
+                            <tr
+                                class="border-b border-slate-800 text-slate-400 font-semibold uppercase bg-slate-950/50">
+                                <th class="py-2 px-2">Fixture</th>
+                                <th class="py-2 px-2">Category</th>
+                                <th class="py-2 px-2 w-20">Watts</th>
+                                <th class="py-2 px-2 w-16">P.F.</th>
+                                <th class="py-2 px-2 w-16">Supply</th>
+                                <th class="py-2 px-2 w-10"></th>
                             </tr>
                         </thead>
                         <tbody id="libTableBody" class="divide-y divide-slate-800/60"></tbody>
                     </table>
                 </div>
                 <div class="flex gap-2 mt-2">
-                    <button onclick="addLibItem()" class="px-3 py-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 border border-sky-500/40 rounded-lg text-xs font-semibold transition"><i class="fa-solid fa-plus"></i> New fixture type</button>
-                    <button onclick="resetLibrary()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition">Restore defaults</button>
+                    <button onclick="addLibItem()"
+                        class="px-3 py-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 border border-sky-500/40 rounded-lg text-xs font-semibold transition"><i
+                            class="fa-solid fa-plus"></i> New fixture type</button>
+                    <button onclick="resetLibrary()"
+                        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition">Restore
+                        defaults</button>
                 </div>
             </details>
         </div>
     </div>
 
     <!-- MODAL 2: Formula & Calculation Reference -->
-    <div id="formulaModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-            <button onclick="toggleFormulaModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+    <div id="formulaModal"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div
+            class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <button onclick="toggleFormulaModal()"
+                class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                <i class="fa-solid fa-square-root-variable text-sky-400"></i> Standard Engineering Formulas & Sizing Logic
+                <i class="fa-solid fa-square-root-variable text-sky-400"></i> Standard Engineering Formulas & Sizing
+                Logic
             </h3>
 
             <div class="space-y-4 text-xs text-slate-300 font-sans">
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">1. Design Current ($I_d$) Calculation</h4>
-                    <p class="font-mono text-slate-200 my-1">1-Phase: $I_d = \frac{P_{Watts}}{V_{LN} \times \cos\phi}$</p>
-                    <p class="font-mono text-slate-200">3-Phase: $I_d = \frac{P_{Watts}}{\sqrt{3} \times V_{LL} \times \cos\phi}$</p>
+                    <p class="font-mono text-slate-200 my-1">1-Phase: $I_d = \frac{P_{Watts}}{V_{LN} \times \cos\phi}$
+                    </p>
+                    <p class="font-mono text-slate-200">3-Phase: $I_d = \frac{P_{Watts}}{\sqrt{3} \times V_{LL} \times
+                        \cos\phi}$</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">2. Breaker Sizing Rule ($I_n$)</h4>
-                    <p class="mb-1">Illustrative sizing assumption only: verify continuous-load rules and protection requirements against the adopted local code.</p>
+                    <p class="mb-1">Illustrative sizing assumption only: verify continuous-load rules and protection
+                        requirements against the adopted local code.</p>
                     <p class="font-mono text-slate-200">$I_b \le I_n \le I_z$</p>
-                    <p class="text-slate-400 text-[11px] mt-1">The app selects the next available breaker rating at or above calculated design current. Any additional margin is an explicit project input, not a universal 1.25× rule. Verify device/load-specific requirements and cable coordination.</p>
-                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A, 25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A, 315A, 400A.</p>
+                    <p class="text-slate-400 text-[11px] mt-1">The app selects the next available breaker rating at or
+                        above calculated design current. Any additional margin is an explicit project input, not a
+                        universal 1.25× rule. Verify device/load-specific requirements and cable coordination.</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Standard MCB trip ratings selected: 6A, 10A, 16A, 20A,
+                        25A, 32A, 40A, 50A, 63A, 80A, 100A, 125A, 160A, 200A, 250A, 315A, 400A.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">3. Voltage Drop Equation ($\%V_d$)</h4>
-                    <p class="font-mono text-slate-200 mb-1">1φ: $\%\Delta U=\frac{2IL(R\cos\phi+X\sin\phi)}{U}\times100$ · 3φ: $\%\Delta U=\frac{\sqrt{3}IL(R\cos\phi+X\sin\phi)}{U}\times100$</p>
-                    <p class="text-slate-400 text-[11px]">R and X are in Ω/km and L is one-way length in km. The app adjusts copper R for conductor temperature. Apply the selected project voltage-drop limit; the Bangladesh residential guideline states 2.5% within its scope.</p>
+                    <p class="font-mono text-slate-200 mb-1">1φ: $\%\Delta
+                        U=\frac{2IL(R\cos\phi+X\sin\phi)}{U}\times100$ · 3φ: $\%\Delta
+                        U=\frac{\sqrt{3}IL(R\cos\phi+X\sin\phi)}{U}\times100$</p>
+                    <p class="text-slate-400 text-[11px]">R and X are in Ω/km and L is one-way length in km. The app
+                        adjusts copper R for conductor temperature. Apply the selected project voltage-drop limit; the
+                        Bangladesh residential guideline states 2.5% within its scope.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">4. Phase Unbalance Percentage</h4>
-                    <p class="font-mono text-slate-200">$\% \text{Unbalance} = \frac{\max(|I_R-I_{avg}|,|I_Y-I_{avg}|,|I_B-I_{avg}|)}{I_{avg}}\times100\%$</p>
-                    <p class="text-slate-400 text-[11px]">This matches the displayed maximum-deviation calculation. It is a load-balance indicator, not a substitute for harmonic / neutral assessment.</p>
+                    <p class="font-mono text-slate-200">$\% \text{Unbalance} =
+                        \frac{\max(|I_R-I_{avg}|,|I_Y-I_{avg}|,|I_B-I_{avg}|)}{I_{avg}}\times100\%$</p>
+                    <p class="text-slate-400 text-[11px]">This matches the displayed maximum-deviation calculation. It
+                        is a load-balance indicator, not a substitute for harmonic / neutral assessment.</p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">5. Circuit Grouping Rule</h4>
-                    <p class="font-mono text-slate-200">$\sum I_d \times SF \le I_n$ (combined circuit capped at 16 A MCB)</p>
-                    <p class="text-slate-400 text-[11px] mt-1">Low-power loads (up to 500 W per unit, not HVAC / motor) are packed into circuits per room until the breaker capacity is reached; heavier loads get a dedicated circuit. Each circuit sits on one phase and circuits are balanced across R / Y / B.</p>
+                    <p class="font-mono text-slate-200">$\sum I_d \times SF \le I_n$ (combined circuit capped at 16 A
+                        MCB)</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Low-power loads (up to 500 W per unit, not HVAC / motor)
+                        are packed into circuits per room until the breaker capacity is reached; heavier loads get a
+                        dedicated circuit. Each circuit sits on one phase and circuits are balanced across R / Y / B.
+                    </p>
                 </div>
 
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-sky-400 mb-1">6. Boards, 3-Phase Loads & Feeders</h4>
-                    <p class="font-mono text-slate-200">3&Phi; load: $I_d = \frac{P}{\sqrt{3} \times V_{LL} \times \cos\phi}$ (carried equally on R, Y, B)</p>
-                    <p class="font-mono text-slate-200 mt-1">Feeder: $I_n \ge SF \times I_{max,phase}$ &nbsp; $\%V_d = \frac{\sqrt{3} \times L \times I \times R_c}{V_{LL}} \times 100$ (3&Phi;)</p>
-                    <p class="text-slate-400 text-[11px] mt-1">Each board adds up its circuits and sub-boards. 1-phase circuits and 1-phase boards are balanced across R / Y / B inside the 3-phase board that feeds them.</p>
+                    <p class="font-mono text-slate-200">3&Phi; load: $I_d = \frac{P}{\sqrt{3} \times V_{LL} \times
+                        \cos\phi}$ (carried equally on R, Y, B)</p>
+                    <p class="font-mono text-slate-200 mt-1">Feeder: $I_n \ge SF \times I_{max,phase}$ &nbsp; $\%V_d =
+                        \frac{\sqrt{3} \times L \times I \times R_c}{V_{LL}} \times 100$ (3&Phi;)</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Each board adds up its circuits and sub-boards. 1-phase
+                        circuits and 1-phase boards are balanced across R / Y / B inside the 3-phase board that feeds
+                        them.</p>
                 </div>
             </div>
         </div>
@@ -621,4 +832,5 @@
     <script src="js/app.js"></script>
     <script src="js/project-workspace.js"></script>
 </body>
+
 </html>
