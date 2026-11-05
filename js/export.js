@@ -103,15 +103,15 @@ function exportToExcel() {
         { Check: "Current multiplier basis", Input: "Per-load", Result: "Bangladesh residential guideline: 1.65 for fluorescent lamps, fans and small inductive loads up to 1 kW; editable per load" },
         { Check: "Demand/diversity factor basis", Input: "Engineer-entered per-load factor", Result: "No universal category-wide diversity percentage is assumed; document the project study / authority basis" },
         { Check: "Drawing convention", Input: engineering.sldConvention, Result: "Illustrative symbol convention; not a certified standards library" },
-        { Check: "Installation reference", Input: engineering.installationMethod, Result: "Reference method selected; cable-specific table verification required" },
-        { Check: "Ambient correction factor", Input: engineering.ambientFactor, Result: "User-entered factor applied to generic ampacity table" },
-        { Check: "Grouping correction factor", Input: engineering.groupingFactor, Result: "User-entered factor applied to generic ampacity table" },
+        { Check: "Cable installation reference", Input: engineering.cableMethod || "B2", Result: "IEC 60364-5-52 simplified unburied copper/PVC 2-loaded-conductor profile" },
+        { Check: "Ambient correction factor", Input: engineering.cableAmbientFactor ?? 1, Result: "Engineer-entered Ca applied to the IEC reference ampacity" },
+        { Check: "Grouping correction factor", Input: engineering.cableGroupingFactor ?? 1, Result: "Engineer-entered Cg applied to the IEC reference ampacity" },
         { Check: "MDB prospective fault current (kA)", Input: faultKnown ? Number(engineering.sourceFaultKA) : "DATA REQUIRED", Result: "Utility / short-circuit study input" },
         { Check: "Main breaker Icu/Icn (kA)", Input: icuKnown ? Number(engineering.mainBreakerIcuKA) : "DATA REQUIRED", Result: faultKnown && icuKnown ? (Number(engineering.mainBreakerIcuKA) >= Number(engineering.sourceFaultKA) ? "Entered values pass simple MDB comparison" : "FAIL — breaker rating below entered fault level") : "Cannot compare until both values are entered" },
         { Check: "Downstream fault levels", Input: "DATA REQUIRED", Result: "Not calculated — source and feeder R/X impedances, lengths and fault assumptions required" },
         { Check: "Protection selectivity", Input: "NOT VERIFIED", Result: "Manufacturer time-current curves / selectivity tables required" },
         { Check: "Earthing / ADS", Input: "NOT VERIFIED", Result: "Earthing arrangement, loop impedance, disconnection time and protective-device data required" },
-        { Check: "Voltage drop model", Input: "Preliminary", Result: "Resistance-only estimate; reactance, conductor operating temperature and harmonics not fully modelled" }
+        { Check: "Voltage drop model", Input: "IEC-style R/X model", Result: "PF, reactance and conductor operating temperature included; harmonics and transient effects are not modelled" }
     ];
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(engineeringRows), "Engineering Checks");
     XLSX.writeFile(workbook, "Electrical_Load_Schedule.xlsx");
