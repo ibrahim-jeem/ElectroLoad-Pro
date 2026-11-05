@@ -136,3 +136,25 @@ main, header, footer {
   body.sld-print-mode .sld-viewport { height:250mm !important; background:#071426 !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
   body.sld-print-mode [data-sld-toolbar], body.sld-print-mode .sld-no-print { display:none !important; }
 }
+
+
+/* Workspace UX: compact project controls, accessible advanced switch and readable schedules. */
+.workspace-input{display:block;width:100%;margin-top:.3rem;padding:.55rem .7rem;border:1px solid #334155;border-radius:.6rem;background:#020617;color:#e2e8f0;min-height:2.25rem;outline:none}
+.workspace-input:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.18)}
+.workspace-btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem .75rem;border:1px solid #334155;border-radius:.6rem;background:#1e293b;color:#e2e8f0;font-size:.72rem;font-weight:700;transition:background .15s,border-color .15s}
+.workspace-btn:hover{background:#334155;border-color:#64748b}
+.workspace-btn-primary{background:#0369a1;border-color:#0284c7;color:#fff}
+.workspace-btn-primary:hover{background:#0284c7}
+#projectManager{background:linear-gradient(135deg,rgba(15,35,62,.96),rgba(15,23,42,.96));border-color:#29476b}
+#projectManager label{min-width:0}
+#projectManagerStatus{min-height:1rem}
+#advancedPanel[hidden]{display:none!important}
+#advancedPanel{border-top:1px solid #263b58;padding-top:1rem}
+#advancedPanel>section{margin:0}
+#boardHierarchySection{border-color:#29476b}
+#cableSizingSection{border-color:#29476b}
+#dbScheduleSection tbody tr:hover{background:rgba(51,65,85,.25)}
+#dbScheduleSection td{padding:.55rem .5rem;vertical-align:top}
+#dbScheduleSection th{padding:.65rem .5rem;white-space:nowrap}
+#projectReadinessChecks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.5rem}
+@media(max-width:700px){#projectManager .workspace-btn{flex:1}#dbScheduleSection table{min-width:1100px}}
