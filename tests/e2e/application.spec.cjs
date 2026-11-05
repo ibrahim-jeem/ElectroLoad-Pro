@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.locator('#boardTableBody tr')).toHaveCount(3);
+  await page.locator('#advancedToggle').check();
 });
 
 test('one-phase bathroom board can be parented to one-phase bedroom switchboard', async ({ page }) => {
@@ -230,4 +231,43 @@ test('residential 2-ton AC sizing respects Bangladesh 15A circuit minimum cable 
   expect(result.breaker).toBe(16);
   expect(result.valid).toBeTruthy();
   expect(result.cable).toBe(4);
+});
+
+
+test('advanced engineering tools are collapsed by default and expand on demand', async ({ page }) => {
+  await page.locator('#advancedToggle').uncheck();
+  await expect(page.locator('#advancedPanel')).toBeHidden();
+  await page.locator('#advancedToggle').check();
+  await expect(page.locator('#advancedPanel')).toBeVisible();
+  await expect(page.locator('#cableSizingSection')).toBeVisible();
+  await expect(page.locator('#boardHierarchySection')).toBeVisible();
+});
+
+test('distribution board schedule mirrors board and circuit calculations', async ({ page }) => {
+  await expect(page.locator('#dbScheduleBody tr').first()).toBeVisible();
+  await expect(page.locator('#dbScheduleCount')).toContainText('boards');
+  await expect(page.locator('#dbScheduleBody')).toContainText('MDB');
+  await expect(page.locator('#dbScheduleBody')).toContainText('CKT-');
+});
+
+test('project management saves, reloads and exports named project data', async ({ page }) => {
+  await page.locator('#projectName').fill('QA Demo Project');
+  await page.locator('#projectClient').fill('ElectroLoad QA');
+  await page.locator('#projectLocation').fill('Dhaka');
+  await page.locator('#projectSaveBtn').click();
+  await expect(page.locator('#projectPicker')).toContainText('QA Demo Project');
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('elpro_projects_v1')||'[]'));
+  expect(saved[0].meta.name).toBe('QA Demo Project');
+  expect(saved[0].project.fixtures.length).toBeGreaterThan(0);
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#projectExportBtn').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toContain('.elpro.json');
+});
+
+test('SLD contains a project drawing title block', async ({ page }) => {
+  await page.locator('#projectName').fill('Title Block QA');
+  await page.locator('#projectName').press('Tab');
+  await expect(page.locator('#sldSvg [data-sld-title-block]')).toHaveCount(1);
+  await expect(page.locator('#sldSvg [data-sld-title-block]')).toContainText('Title Block QA');
 });
