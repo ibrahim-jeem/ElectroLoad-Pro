@@ -106,7 +106,7 @@ function initCableSizingUI(){
     cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??'',cableMaterial:engineering.cableMaterial||'Cu',
     cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
   ids.forEach(id=>{const el=document.getElementById(id);if(el){el.value=values[id];el.addEventListener('change',()=>{engineering[id.replace(/^cable/,'cable')]=el.value;persistCableSettings();});}});
-  const tableMode=document.getElementById('cableTableMode'); if(tableMode)tableMode.textContent=config.wireUnit==='Metric'?'Metric copper · mm² · 2 loaded PVC':'AWG profile unavailable';
+  const tableMode=document.getElementById('cableTableMode'); if(tableMode)tableMode.textContent=config.wireUnit==='Metric'?'Metric copper · mm² · 2 / 3 loaded PVC':'AWG profile unavailable';
   renderCableSizing();
 }
 function persistCableSettings(){
