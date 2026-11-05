@@ -31,15 +31,15 @@ test('one-phase bathroom board can be parented to one-phase bedroom switchboard'
   await expect(bathroom.locator('select').nth(1)).toHaveValue('b1');
   const hierarchy = await page.evaluate(() => boards.map(b => ({ id: b.id, parent: b.par, supply: bSup(b) })));
   expect(hierarchy.find(b => b.id === 'b2')).toMatchObject({ parent: 'b1', supply: 1 });
-  const titles = await page.locator('#sldSvg title').allTextContents();
+  const titles = await page.locator('#sldSvg [data-tip]').evaluateAll(nodes => nodes.map(n => n.dataset.tip));
   expect(titles.some(t => t.includes('From: Bedroom Main Switchboard') && t.includes('To: Bedroom Bathroom Switchboard'))).toBeTruthy();
   expect(titles.some(t => t.includes('From: MDB') && t.includes('To: Bedroom Bathroom Switchboard'))).toBeFalsy();
 });
 
 test('SLD board nodes expose hover details and toolbar zoom works', async ({ page }) => {
-  const boardNode = page.locator('#sldSvg text.sld-node').filter({ has: page.locator('title', { hasText: 'Distribution board: MDB' }) }).first();
+  const boardNode = page.locator('#sldSvg g.sld-node').filter({ has: page.locator('[data-tip]') }).first();
   await expect(boardNode).toHaveCount(1);
-  await expect(boardNode.locator('title')).toContainText('Parent:');
+  await expect.poll(() => boardNode.getAttribute('data-tip')).toContain('Parent:');
   const before = await page.locator('#sldSvg').getAttribute('viewBox');
   await page.locator('[data-sld-toolbar] [data-zoom="in"]').click();
   expect(await page.locator('#sldSvg').getAttribute('viewBox')).not.toBe(before);
@@ -70,12 +70,13 @@ test('SLD supports cursor-centred mouse-wheel zoom and drag panning', async ({ p
 });
 
 test('SLD breaker symbols show compact hover details', async ({ page }) => {
-  const feeder = page.locator('#sldSvg rect.sld-node').filter({ has: page.locator('title', { hasText: 'Outgoing feeder circuit-breaker (provisional)' }) }).first();
+  const feeder = page.locator('#sldSvg rect.sld-node').filter({ has: page.locator('[data-tip]') }).first();
   await expect(feeder).toHaveCount(1);
   await feeder.hover();
   await expect(page.locator('[data-sld-tooltip]')).toBeVisible();
   await expect(page.locator('[data-sld-tooltip]')).toContainText('From: MDB');
   await expect(page.locator('[data-sld-tooltip]')).toContainText('To:');
+  await expect(page.locator('[data-sld-tooltip]')).not.toContainText('Parent:');
 });
 
 test('project data survives a full browser reload', async ({ page }) => {
@@ -118,4 +119,32 @@ test('invalid power factor blocks calculations instead of silently calculating',
   await pf.press('Tab');
   await expect(page.locator('#calculatedScheduleBody')).toContainText('Calculation blocked');
   await expect(page.locator('#designAmpsVal')).toHaveText('—');
+});
+
+test('SLD uses navy drafting sheet and phase-specific feeder taps with separate N and PE', async ({ page }) => {
+  const svg = page.locator('#sldSvg');
+  await expect(svg.locator('rect').first()).toHaveAttribute('fill', '#071426');
+  const tips = await svg.locator('[data-tip]').evaluateAll(nodes => nodes.map(n => n.dataset.tip));
+  expect(tips.some(t => t.includes('Phase R feeder conductor from matching busbar to SDB-1'))).toBeTruthy();
+  expect(tips.some(t => t.includes('Neutral (N) feeder conductor from neutral busbar to SDB-1'))).toBeTruthy();
+  expect(tips.some(t => t.includes('Protective earth (PE) conductor from PE bar to SDB-1'))).toBeTruthy();
+  expect(tips.some(t => t.includes('Phase R conductor physically tapped from matching busbar'))).toBeTruthy();
+});
+
+test('engineering inputs persist and MDB Icu is compared with entered fault level', async ({ page }) => {
+  await page.locator('#ambientFactor').fill('0.85');
+  await page.locator('#ambientFactor').press('Tab');
+  await expect(page.locator('#sldEngineeringStatus')).toContainText('combined correction 0.850');
+  await page.locator('#sourceFaultKA').fill('20');
+  await page.locator('#sourceFaultKA').press('Tab');
+  await page.locator('#mainBreakerIcuKA').fill('10');
+  await page.locator('#mainBreakerIcuKA').press('Tab');
+  await expect(page.locator('#sldEngineeringStatus')).toContainText('FAIL — breaker breaking capacity');
+  await page.locator('#mainBreakerIcuKA').fill('25');
+  await page.locator('#mainBreakerIcuKA').press('Tab');
+  await expect(page.locator('#sldEngineeringStatus')).toContainText('PASS — entered MDB Icu/Icn');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('elpro_project_v2')));
+  expect(saved.engineering.ambientFactor).toBe(0.85);
+  expect(saved.engineering.sourceFaultKA).toBe('20');
+  expect(saved.engineering.mainBreakerIcuKA).toBe('25');
 });
