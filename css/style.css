@@ -161,8 +161,8 @@ main, header, footer {
 
 
 /* Release UX pass — compact task-led layout, preserving the navy SLD drafting sheet. */
-#projectDesignBasis{max-width:560px;padding:1.1rem 1.25rem;background:linear-gradient(135deg,rgba(15,35,62,.98),rgba(15,23,42,.98))}
-.project-basis-content{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;max-width:420px}
+#projectDesignBasis{width:100%;padding:.75rem;background:rgba(2,6,23,.45)}
+.project-basis-content{display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem;max-width:none}
 #projectTypeNote{line-height:1.55;color:#fbbf24}
 #projectManager{border-color:#29476b}
 #projectManager .workspace-input{min-height:2.5rem}
