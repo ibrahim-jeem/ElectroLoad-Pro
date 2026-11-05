@@ -215,3 +215,18 @@ test('per-load current and demand factors are editable and affect calculated cur
   expect(saved.fixtures[0].currentFactor).toBe(1.65);
   expect(saved.fixtures[0].demandFactor).toBe(0.5);
 });
+
+test('residential 2-ton AC sizing respects Bangladesh 15A circuit minimum cable rule', async ({ page }) => {
+  await page.evaluate(() => {
+    fixtures.push({id:Math.max(...fixtures.map(f=>f.id))+1,name:'2 Ton Split AC',room:'Test',board:'b0',sup:1,category:'HVAC',qty:1,watts:2400,pf:0.85,currentFactor:1,demandFactor:1,distance:25,phase:'R'});
+    recalculateAll();
+  });
+  const result = await page.evaluate(() => {
+    const c = circuits.find(x => x.items.some(i => i.name === '2 Ton Split AC'));
+    return { current:c.current, breaker:c.mcb, cable:c.cableV2?.cable?.size, valid:c.cableV2?.valid };
+  });
+  expect(result.current).toBeCloseTo(2400/(230*0.85), 2);
+  expect(result.breaker).toBe(16);
+  expect(result.valid).toBeTruthy();
+  expect(result.cable).toBe(4);
+});
