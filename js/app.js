@@ -22,6 +22,10 @@ function loadProject() {
         if(!saved||![1,2,3,4].includes(saved.version)||!Array.isArray(saved.fixtures)||!Array.isArray(saved.boards)||!saved.boards.length||!saved.config||!saved.grouping||saved.boards[0].par)throw new Error('Saved project format is invalid.');
         if(new Set(saved.boards.map(b=>b.id)).size!==saved.boards.length)throw new Error('Saved project has duplicate board IDs.');
         config={...config,...saved.config};engineering={...engineering,...(saved.engineering||{})};grouping={...grouping,...saved.grouping};
+        // Migrate v1 cable controls into the v2-specific settings without discarding user-entered factors.
+        if(!engineering.cableMethod && ['A1','A2','B1','B2','C','E','F'].includes(engineering.installationMethod)) engineering.cableMethod=engineering.installationMethod;
+        if(engineering.cableAmbientFactor==null && Number.isFinite(Number(engineering.ambientFactor))) engineering.cableAmbientFactor=Number(engineering.ambientFactor);
+        if(engineering.cableGroupingFactor==null && Number.isFinite(Number(engineering.groupingFactor))) engineering.cableGroupingFactor=Number(engineering.groupingFactor);
         fixtures=saved.fixtures.map(f=>({...f,room:f.room||'General'}));
         boards=saved.boards.map(b=>({...b,room:b.room||'General'}));
         const error=validateBoardHierarchy();
