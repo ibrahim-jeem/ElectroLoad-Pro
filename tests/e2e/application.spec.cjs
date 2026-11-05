@@ -187,3 +187,17 @@ test('cable sizing settings and circuit fault inputs persist after reload', asyn
   await expect(page.locator('#cableTripTime')).toHaveValue('0.2');
   await expect(page.locator('#cableSizingBody [data-cable-fault]').first()).toHaveValue('0.25');
 });
+
+test('project category and additional distribution board types are available and persist', async ({ page }) => {
+  await page.locator('#projectTypeSelect').selectOption('Industrial');
+  await expect(page.locator('#projectTypeNote')).toContainText('motor starting');
+  await page.locator('#projectTypeSelect').selectOption('Commercial');
+  await page.reload();
+  await expect(page.locator('#projectTypeSelect')).toHaveValue('Commercial');
+  await page.locator('#boardTableBody tr').nth(1).locator('select').first().selectOption({ label: 'FDB' });
+  await expect(page.locator('#boardTableBody tr').nth(1).locator('select').first()).toHaveValue('FDB');
+  await page.locator('#boardTableBody tr').nth(2).locator('select').first().selectOption({ label: 'DB' });
+  await expect(page.locator('#boardTableBody tr').nth(2).locator('select').first()).toHaveValue('DB');
+  const types = await page.locator('#boardTableBody tr').nth(1).locator('select').first().locator('option').allTextContents();
+  expect(types).toContain('BDB');
+});
