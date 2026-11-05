@@ -1,147 +1,139 @@
-/* ElectroLoad Pro | cable.js
- * Circuit-linked cable sizing screening engine.
- * Tables are generic project screening data, not a verified IEC/NEC/BNBC ampacity library.
+/* ElectroLoad Pro | Cable Sizing Engine V2
+ * Deterministic IEC-style sizing workflow. Never reports code compliance from incomplete inputs.
+ * Ampacity data source: Schneider Electric Electrical Installation Guide, Fig. G21,
+ * reproducing IEC 60364-5-52 Table C.52.1 simplified unburied conductor reference values.
  */
 function calculateCableChecks(input) {
-    const fail = message => ({ valid: false, message });
-    const Ib = Number(input.designCurrent), In = Number(input.breakerRating);
-    const Ca = Number(input.ambientFactor), Cg = Number(input.groupingFactor);
-    const L = Number(input.lengthM), V = Number(input.voltage), limit = Number(input.maxVdrop);
-    if (![Ib, In, Ca, Cg, L, V, limit].every(Number.isFinite) || Ib < 0 || In <= 0 || Ca <= 0 || Cg <= 0 || L < 0 || V <= 0 || limit <= 0) return fail('Invalid or incomplete circuit inputs.');
-    const correction = Ca * Cg;
-    if (correction <= 0 || correction > 2.25) return fail('Combined correction factor is outside the supported range.');
-    const table = Array.isArray(input.wireTable) ? input.wireTable : [];
-    const cable = table.find(row => Number(row.ampacity) * correction >= In) || null;
-    if (!cable) return { valid: true, cable: null, Ib, In, correction, coordination: false, message: 'No cable in the available reference table can carry the selected protective-device rating.' };
-    const Iz = Number(cable.ampacity) * correction;
-    const coordination = Ib <= In && In <= Iz;
-    const multiplier = input.phases === 3 ? Math.sqrt(3) : 2;
-    const vDropV = multiplier * (L / 1000) * Ib * Number(cable.resistance);
-    const vDropPct = (vDropV / (input.phases === 3 ? Number(input.voltageLL || V) : V)) * 100;
-    const voltageDropPass = vDropPct <= limit;
-    const faultKA = input.faultCurrentKA === '' || input.faultCurrentKA == null ? null : Number(input.faultCurrentKA);
-    const tripTime = Number(input.tripTime);
-    let thermal = { status: 'NOT ENTERED', requiredMm2: null, phasePass: null, pePass: null };
-    if (faultKA !== null && Number.isFinite(faultKA) && faultKA > 0 && Number.isFinite(tripTime) && tripTime > 0) {
-        const k = input.insulation === 'XLPE' ? 143 : 115;
-        const requiredMm2 = (faultKA * 1000 * Math.sqrt(tripTime)) / k;
-        const phaseMm2 = Number(String(cable.size).replace(/[^0-9.]/g, ''));
-        const peMm2 = Number(String(cable.pe || '').replace(/[^0-9.]/g, ''));
-        if (input.metric) {
-            const phasePass = Number.isFinite(phaseMm2) && phaseMm2 >= requiredMm2;
-            const pePass = Number.isFinite(peMm2) && peMm2 >= requiredMm2;
-            thermal = { status: phasePass && pePass ? 'PASS' : 'FAIL', requiredMm2, phasePass, pePass };
-        } else {
-            thermal = { status: 'NOT AVAILABLE FOR AWG', requiredMm2, phasePass: null, pePass: null };
-        }
-    } else if (faultKA !== null) {
-        thermal = { status: 'INVALID INPUT', requiredMm2: null, phasePass: false, pePass: false };
+  const fail = message => ({ valid:false, status:'BLOCKED', message });
+  const n = v => Number(v);
+  const Ib=n(input.designCurrent), In=n(input.breakerRating), L=n(input.lengthM), V=n(input.voltage);
+  const Ca=n(input.ambientFactor), Cg=n(input.groupingFactor), limit=n(input.maxVdrop);
+  const pf=n(input.powerFactor ?? 0.9), temp=n(input.conductorTempC ?? (input.insulation==='XLPE'?90:70));
+  const phases=n(input.phases), method=String(input.installationMethod||'');
+  const conductors=n(input.loadedConductors), material=input.material||'Cu', insulation=input.insulation||'PVC';
+  if (![Ib,In,L,V,Ca,Cg,limit,pf,temp,phases,conductors].every(Number.isFinite) ||
+      Ib<=0 || In<=0 || L<0 || V<=0 || Ca<=0 || Cg<=0 || limit<=0 || pf<=0 || pf>1 ||
+      ![1,3].includes(phases) || ![2,3].includes(conductors)) return fail('Invalid or incomplete design inputs.');
+  if (material!=='Cu') return fail('This compact IEC ampacity profile currently supports copper only. Aluminium requires a separately validated dataset.');
+  if (insulation!=='PVC') return fail('XLPE ampacity profile is not enabled until its reference-column mapping is independently verified. Select PVC or provide a manufacturer cable schedule.');
+  const profile=IEC_CABLE_REFERENCE.methods[method];
+  const amps=profile && profile[conductors];
+  if (!Array.isArray(amps)) return fail('No verified ampacity column is available for this installation method and number of loaded conductors.');
+  const correction=Ca*Cg;
+  if (correction>1.5) return fail('Combined correction factor is outside the supported screening range.');
+  const table=IEC_CABLE_REFERENCE.sizes.map((size,i)=>({size,ampacity:amps[i]})).filter(x=>Number.isFinite(x.ampacity));
+  const cable=table.find(x=>x.ampacity*correction>=In);
+  if(!cable) return fail('No cable in the selected reference table can carry the protective-device rating after correction.');
+  const Iz=cable.ampacity*correction;
+  const coordination=Ib<=In && In<=Iz;
+  // R at conductor operating temperature. R20 = 17.241 (Cu) / S ohm-km;
+  // alpha20 = 0.00393/K. X defaults to 0.08 ohm/km when no manufacturer data exists.
+  const S=cable.size, R20=17.241/S, R=R20*(1+0.00393*(temp-20));
+  const X=n(input.reactanceOhmKm ?? 0.08);
+  if(!Number.isFinite(X)||X<0) return fail('Invalid cable reactance.');
+  const sinPhi=Math.sqrt(Math.max(0,1-pf*pf));
+  const impedanceTerm=R*pf+X*sinPhi;
+  const deltaV=(phases===3?Math.sqrt(3):2)*Ib*impedanceTerm*(L/1000);
+  const vDropPct=deltaV/V;
+  const voltageDropPass=vDropPct<=limit;
+  // IEC 60364-5-54 simplified PE selection for same material; local 4 mm² ECC floor
+  // is applied only to BN residential-guideline profile and is labelled separately.
+  let peMm2=S<=16?S:S<=35?16:S/2;
+  const localPeFloor=input.localPeMinimum ? n(input.localPeMinimum) : 0;
+  if(localPeFloor>0) peMm2=Math.max(peMm2,localPeFloor);
+  const faultKA=input.faultCurrentKA===''||input.faultCurrentKA==null?null:n(input.faultCurrentKA);
+  const trip=n(input.tripTime);
+  let thermal={status:'DATA REQUIRED',requiredMm2:null,phasePass:null,pePass:null};
+  if(faultKA!==null){
+    if(!Number.isFinite(faultKA)||faultKA<=0||!Number.isFinite(trip)||trip<=0||trip>5) thermal={status:'INVALID INPUT',requiredMm2:null,phasePass:false,pePass:false};
+    else {
+      const k=insulation==='XLPE'?143:115;
+      const requiredMm2=faultKA*1000*Math.sqrt(trip)/k;
+      thermal={status:'SCREENING ONLY',requiredMm2,phasePass:S>=requiredMm2,pePass:peMm2>=requiredMm2};
+      thermal.status=thermal.phasePass&&thermal.pePass?'PASS — ADIABATIC SCREEN':'FAIL — ADIABATIC SCREEN';
     }
-    const overall = !coordination || !voltageDropPass || thermal.status === 'FAIL' || thermal.status === 'INVALID INPUT'
-        ? 'REVIEW / FAIL'
-        : thermal.status === 'PASS' ? 'PASS — SCREENING' : 'INCOMPLETE';
-    return { valid: true, cable, Ib, In, Iz, correction, coordination, vDropV, vDropPct, voltageDropPass, thermal, overall };
+  }
+  const faultLevel=n(input.faultCurrentAtPointKA);
+  const breaking=n(input.breakingCapacityKA);
+  const breakingCheck=Number.isFinite(faultLevel)&&faultLevel>0&&Number.isFinite(breaking)&&breaking>0
+    ? {status:breaking>=faultLevel?'PASS — BREAKING CAPACITY':'FAIL — BREAKING CAPACITY',faultLevel,breaking}
+    : {status:'DATA REQUIRED'};
+  const overall=!coordination||!voltageDropPass||thermal.status.startsWith('FAIL')||breakingCheck.status.startsWith('FAIL')
+    ? 'REVIEW / FAIL' : 'INCOMPLETE — ENGINEER REVIEW REQUIRED';
+  return {valid:true,status:overall,cable,Ib,In,Iz,correction,coordination,R,X,deltaV,vDropPct,voltageDropPass,peMm2,thermal,breakingCheck,
+    source:IEC_CABLE_REFERENCE.source,method,conductors,material,insulation};
 }
-
-function cableInputValue(id, fallback) {
-    const el = document.getElementById(id);
-    return el ? el.value : fallback;
+function cableInputValue(id,fallback){const el=document.getElementById(id);return el?el.value:fallback;}
+function initCableSizingUI(){
+  const ids=['cableMaxVdrop','cableInsulation','cableTripTime','cableMethod','cableConductors','cableAmbientFactor','cableGroupingFactor','cableTemp','cablePowerFactor','cableMaterial','cableReactance','cableFaultLevel','cableBreakingCapacity'];
+  const values={cableMaxVdrop:engineering.cableMaxVdrop??2.5,cableInsulation:engineering.cableInsulation||'PVC',cableTripTime:engineering.cableTripTime??0.4,
+    cableMethod:engineering.cableMethod||'B2',cableConductors:engineering.cableConductors||'2',
+    cableAmbientFactor:engineering.cableAmbientFactor??1,cableGroupingFactor:engineering.cableGroupingFactor??1,
+    cableTemp:engineering.cableTemp??70,cablePowerFactor:engineering.cablePowerFactor??0.9,cableMaterial:engineering.cableMaterial||'Cu',
+    cableReactance:engineering.cableReactance??0.08,cableFaultLevel:engineering.cableFaultLevel||'',cableBreakingCapacity:engineering.cableBreakingCapacity||''};
+  ids.forEach(id=>{const el=document.getElementById(id);if(el){el.value=values[id];el.addEventListener('change',()=>{engineering[id.replace(/^cable/,'cable')]=el.value;persistCableSettings();});}});
+  renderCableSizing();
 }
-function initCableSizingUI() {
-    const maxDrop = document.getElementById('cableMaxVdrop');
-    const insulation = document.getElementById('cableInsulation');
-    const tripTime = document.getElementById('cableTripTime');
-    if (!maxDrop || !insulation || !tripTime) return;
-    maxDrop.value = engineering.cableMaxVdrop ?? 3;
-    insulation.value = engineering.cableInsulation || 'PVC';
-    tripTime.value = engineering.cableTripTime ?? 0.4;
-    [maxDrop, insulation, tripTime].forEach(el => el.addEventListener('change', () => {
-        engineering.cableMaxVdrop = Number(maxDrop.value);
-        engineering.cableInsulation = insulation.value;
-        engineering.cableTripTime = Number(tripTime.value);
-        renderCableSizing();
-        if (typeof saveProject === 'function') saveProject();
-    }));
-    renderCableSizing();
+function persistCableSettings(){
+  const read=id=>document.getElementById(id)?.value;
+  engineering.cableMaxVdrop=n(read('cableMaxVdrop')); engineering.cableInsulation=read('cableInsulation');
+  engineering.cableTripTime=n(read('cableTripTime')); engineering.cableMethod=read('cableMethod');
+  engineering.cableConductors=read('cableConductors'); engineering.cableAmbientFactor=n(read('cableAmbientFactor'));
+  engineering.cableGroupingFactor=n(read('cableGroupingFactor')); engineering.cableTemp=n(read('cableTemp'));
+  engineering.cablePowerFactor=n(read('cablePowerFactor')); engineering.cableMaterial=read('cableMaterial');
+  engineering.cableReactance=n(read('cableReactance')); engineering.cableFaultLevel=read('cableFaultLevel');
+  engineering.cableBreakingCapacity=read('cableBreakingCapacity');
+  renderCableSizing(); if(typeof saveProject==='function')saveProject();
 }
-function renderCableSizing() {
-    const body = document.getElementById('cableSizingBody');
-    const summary = document.getElementById('cableSizingSummary');
-    const notes = document.getElementById('cableSizingNotes');
-    if (!body || !summary || !notes || typeof circuits === 'undefined') return;
-    const metric = config.wireUnit === 'Metric';
-    const table = metric ? METRIC_WIRE_TABLE : AWG_WIRE_TABLE;
-    const maxDrop = Number(cableInputValue('cableMaxVdrop', engineering.cableMaxVdrop ?? 3));
-    const tripTime = Number(cableInputValue('cableTripTime', engineering.cableTripTime ?? 0.4));
-    const insulation = cableInputValue('cableInsulation', engineering.cableInsulation || 'PVC');
-    const factorsValid = Number(engineering.ambientFactor) > 0 && Number(engineering.groupingFactor) > 0;
-    const tableMode = document.getElementById('cableTableMode');
-    if (tableMode) tableMode.textContent = metric ? 'Metric copper · mm²' : 'AWG copper · THHN/THWN';
-    if (!circuits.length) {
-        body.innerHTML = '<tr><td colspan="9" class="p-4 text-slate-500">No circuits are available. Add loads and run the calculation engine.</td></tr>';
-        summary.innerHTML = '';
-        notes.innerHTML = '<p>Waiting for valid circuit data.</p>';
-        return;
-    }
-    if (!factorsValid || !Number.isFinite(maxDrop) || maxDrop <= 0 || maxDrop > 10 || !Number.isFinite(tripTime) || tripTime <= 0 || tripTime > 5) {
-        body.innerHTML = '<tr><td colspan="9" class="p-4 text-red-300">Invalid cable-engine settings. Check correction factors, voltage-drop limit and trip time.</td></tr>';
-        summary.innerHTML = '';
-        notes.innerHTML = '<p>Correct the settings before interpreting cable results.</p>';
-        return;
-    }
-    const faultInputs = engineering.cableFaultInputs || (engineering.cableFaultInputs = {});
-    const results = circuits.map(ckt => {
-        const key = ckt.board + '|' + ckt.id;
-        const fault = Object.prototype.hasOwnProperty.call(faultInputs, key) ? String(faultInputs[key]) : '';
-        const phases = Number(ckt.sup) === 3 ? 3 : 1;
-        const result = calculateCableChecks({
-            designCurrent: ckt.current, breakerRating: ckt.mcb,
-            ambientFactor: Number(engineering.ambientFactor || 1), groupingFactor: Number(engineering.groupingFactor || 1),
-            lengthM: ckt.distance, voltage: phases === 3 ? config.voltageLL : config.voltageLN, voltageLL: config.voltageLL,
-            phases, maxVdrop: maxDrop, wireTable: table, faultCurrentKA: fault,
-            tripTime, insulation, metric
-        });
-        return { ckt, key, fault, result };
-    });
-    const sized = results.filter(x => x.result.valid && x.result.cable);
-    const passed = results.filter(x => x.result.overall === 'PASS — SCREENING').length;
-    const failed = results.filter(x => x.result.overall === 'REVIEW / FAIL').length;
-    const incomplete = results.length - passed - failed;
-    const tile = (label, value, tone) => '<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-[10px] uppercase tracking-wide text-slate-500">' + label + '</div><div class="text-xl font-bold mt-1 ' + tone + '">' + value + '</div></div>';
-    summary.innerHTML = tile('Circuits analysed', results.length, 'text-slate-100') + tile('Screening pass', passed, 'text-emerald-400') + tile('Review / fail', failed, 'text-rose-400') + tile('Incomplete checks', incomplete, 'text-amber-300');
-    body.innerHTML = results.map(({ ckt, key, fault, result }) => {
-        const name = escapeHTML(boardOf(ckt.board).name + ' · ' + ckt.id);
-        if (!result.valid || !result.cable) return '<tr><td class="py-3 px-2 text-slate-200">' + name + '</td><td colspan="7" class="py-3 px-2 text-rose-300">' + escapeHTML(result.message || 'No valid cable selection') + '</td><td class="py-3 px-2 text-rose-300">BLOCKED</td></tr>';
-        const thermal = result.thermal.status === 'PASS' ? '<span class="text-emerald-400">PASS</span>' : result.thermal.status === 'FAIL' ? '<span class="text-rose-400">FAIL</span>' : '<span class="text-amber-300">' + escapeHTML(result.thermal.status) + '</span>';
-        const vTone = result.voltageDropPass ? 'text-emerald-400' : 'text-rose-400';
-        const overallTone = result.overall.startsWith('PASS') ? 'text-emerald-400' : result.overall === 'REVIEW / FAIL' ? 'text-rose-400' : 'text-amber-300';
-        return '<tr class="hover:bg-slate-800/40">' +
-            '<td class="py-2.5 px-2 text-slate-200 font-semibold">' + name + '<span class="block text-[10px] text-slate-500 font-normal">' + (ckt.sup === 3 ? '3-phase' : '1-phase') + ' · ' + Number(ckt.distance).toFixed(1) + ' m</span></td>' +
-            '<td class="py-2.5 px-2 font-mono text-amber-300">' + result.Ib.toFixed(2) + ' / ' + result.In.toFixed(0) + '</td>' +
-            '<td class="py-2.5 px-2 text-cyan-300 font-bold">' + escapeHTML(result.cable.size) + '<span class="block text-[10px] text-slate-500 font-normal">Cu · ' + (metric ? 'metric' : 'AWG') + '</span></td>' +
-            '<td class="py-2.5 px-2 font-mono text-slate-200">' + result.Iz.toFixed(1) + '</td>' +
-            '<td class="py-2.5 px-2 font-mono ' + vTone + '">' + result.vDropPct.toFixed(2) + '%<span class="block text-[10px] text-slate-500 font-normal">limit ' + maxDrop.toFixed(1) + '%</span></td>' +
-            '<td class="py-2.5 px-2 text-slate-300">' + escapeHTML(result.cable.pe || '—') + '</td>' +
-            '<td class="py-2.5 px-2"><input type="number" min="0.01" step="0.1" placeholder="kA" aria-label="Fault current for ' + name + '" data-cable-fault="' + escapeHTML(key) + '" value="' + escapeHTML(fault) + '" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100"></td>' +
-            '<td class="py-2.5 px-2">' + thermal + (result.thermal.requiredMm2 ? '<span class="block text-[10px] text-slate-500">S ≥ ' + result.thermal.requiredMm2.toFixed(2) + ' mm²</span>' : '') + '</td>' +
-            '<td class="py-2.5 px-2 font-semibold ' + overallTone + '">' + result.overall + '</td></tr>';
-    }).join('');
-    body.querySelectorAll('[data-cable-fault]').forEach(input => input.addEventListener('change', () => {
-        const value = input.value.trim();
-        if (value && (!Number.isFinite(Number(value)) || Number(value) <= 0)) { input.setCustomValidity('Enter a positive fault current in kA, or leave blank.'); input.reportValidity(); return; }
-        input.setCustomValidity('');
-        engineering.cableFaultInputs = engineering.cableFaultInputs || {};
-        if (value) engineering.cableFaultInputs[input.dataset.cableFault] = value;
-        else delete engineering.cableFaultInputs[input.dataset.cableFault];
-        renderCableSizing();
-        if (typeof saveProject === 'function') saveProject();
-    }));
-    notes.innerHTML =
-        '<p><strong class="text-slate-300">Selection rule:</strong> cable is selected so corrected reference ampacity Iz ≥ breaker rating In, while Ib ≤ In. Iz = tabulated ampacity × ambient factor × grouping factor.</p>' +
-        '<p><strong class="text-slate-300">Voltage drop:</strong> resistance-only estimate using the table resistance and longest circuit run; reactance, conductor operating temperature, harmonics and parallel conductors are not modelled.</p>' +
-        '<p><strong class="text-slate-300">Short-circuit thermal check:</strong> enter the prospective fault current at each cable location. The adiabatic S ≥ I√t/k check uses the selected insulation k-value; the AWG table does not include validated mm² equivalents, so this check is unavailable in AWG mode.</p>' +
-        '<p><strong class="text-slate-300">Dataset limitation:</strong> the current ampacity tables are generic screening references. Installation-method selection is not yet linked to method-specific ampacity tables; correction factors are user inputs. Aluminium conductor data, protective-device curves, disconnection-time verification, earth-fault loop/ADS and selectivity are not verified.</p>' +
-        '<p class="text-amber-300">A “PASS — SCREENING” result is not proof of BNBC, IEC 60364 or NEC compliance. Confirm cable construction, installation method, manufacturer data, local adopted code and coordination with a qualified electrical engineer.</p>';
+function renderCableSizing(){
+  const body=document.getElementById('cableSizingBody'),summary=document.getElementById('cableSizingSummary'),notes=document.getElementById('cableSizingNotes');
+  if(!body||!summary||!notes||typeof circuits==='undefined')return;
+  const settings={maxVdrop:n(cableInputValue('cableMaxVdrop',2.5)),insulation:cableInputValue('cableInsulation','PVC'),
+    tripTime:n(cableInputValue('cableTripTime',0.4)),installationMethod:cableInputValue('cableMethod','B2'),
+    loadedConductors:n(cableInputValue('cableConductors','2')),ambientFactor:n(cableInputValue('cableAmbientFactor',1)),
+    groupingFactor:n(cableInputValue('cableGroupingFactor',1)),conductorTempC:n(cableInputValue('cableTemp',70)),
+    powerFactor:n(cableInputValue('cablePowerFactor',0.9)),material:cableInputValue('cableMaterial','Cu'),
+    reactanceOhmKm:n(cableInputValue('cableReactance',0.08)),faultCurrentAtPointKA:cableInputValue('cableFaultLevel',''),
+    breakingCapacityKA:cableInputValue('cableBreakingCapacity','')};
+  if(!circuits.length){body.innerHTML='<tr><td colspan="10" class="p-4 text-slate-500">No circuits available.</td></tr>';summary.innerHTML='';notes.textContent='Add loads to begin cable verification.';return;}
+  const rows=circuits.map(c=>{
+    const phases=Number(c.sup)===3?3:1;
+    const faultInputs=engineering.cableFaultInputs||(engineering.cableFaultInputs={});
+    const key=c.board+'|'+c.id, fault=Object.prototype.hasOwnProperty.call(faultInputs,key)?faultInputs[key]:'';
+    const result=calculateCableChecks({...settings,designCurrent:c.current,breakerRating:c.mcb,lengthM:c.distance,
+      voltage:phases===3?config.voltageLL:config.voltageLN,phases,faultCurrentKA:fault,
+      localPeMinimum:config.standard==='BNBC'?4:0});
+    return {c,key,fault,result};
+  });
+  const ready=rows.filter(x=>x.result.valid),pass=ready.filter(x=>x.result.status.startsWith('INCOMPLETE')).length;
+  const blocked=rows.length-ready.length;
+  const tile=(label,value)=>'<div class="rounded-xl border border-slate-800 bg-slate-950 p-3"><div class="text-[10px] uppercase tracking-wide text-slate-500">'+label+'</div><div class="text-xl font-bold mt-1 text-slate-100">'+value+'</div></div>';
+  summary.innerHTML=tile('Circuits',rows.length)+tile('Calculated',ready.length)+tile('Blocked / unsupported',blocked)+tile('Needs engineer review',ready.length);
+  body.innerHTML=rows.map(({c,key,fault,result})=>{
+    const label=escapeHTML(boardOf(c.board).name+' · '+c.id);
+    if(!result.valid)return '<tr><td class="p-2 text-slate-200">'+label+'</td><td colspan="8" class="p-2 text-amber-300">'+escapeHTML(result.message)+'</td><td class="p-2 text-rose-300">BLOCKED</td></tr>';
+    const cable=result.cable;
+    const thermal=result.thermal.status;
+    return '<tr><td class="p-2 text-slate-200">'+label+'<small class="block text-slate-500">'+c.distance+' m · '+(c.sup===3?'3-phase':'1-phase')+'</small></td>'+
+      '<td class="p-2">'+result.Ib.toFixed(2)+' / '+result.In.toFixed(0)+'</td>'+
+      '<td class="p-2 text-cyan-300 font-bold">'+cable.size+' mm² Cu</td>'+
+      '<td class="p-2">'+result.cable.ampacity.toFixed(1)+' / '+result.Iz.toFixed(1)+' A</td>'+
+      '<td class="p-2">'+result.vDropPct.toFixed(2)+'% <small class="block text-slate-500">limit '+settings.maxVdrop+'%</small></td>'+
+      '<td class="p-2">'+result.peMm2.toFixed(1)+' mm²</td>'+
+      '<td class="p-2"><input aria-label="Fault current '+label+'" data-cable-fault="'+escapeHTML(key)+'" type="number" min="0.01" step="0.01" value="'+escapeHTML(fault)+'" placeholder="kA" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1"></td>'+
+      '<td class="p-2">'+escapeHTML(thermal)+'</td>'+
+      '<td class="p-2 text-amber-300 font-semibold">'+escapeHTML(result.status)+'</td></tr>';
+  }).join('');
+  body.querySelectorAll('[data-cable-fault]').forEach(el=>el.addEventListener('change',()=>{
+    const value=el.value.trim(); if(value&&(!Number.isFinite(Number(value))||Number(value)<=0)){el.setCustomValidity('Enter a positive fault current in kA.');el.reportValidity();return;}
+    el.setCustomValidity(''); engineering.cableFaultInputs=engineering.cableFaultInputs||{};
+    if(value)engineering.cableFaultInputs[el.dataset.cableFault]=value;else delete engineering.cableFaultInputs[el.dataset.cableFault];
+    renderCableSizing();if(typeof saveProject==='function')saveProject();
+  }));
+  notes.innerHTML='<p><b class="text-slate-200">Design sequence:</b> determine Ib from verified equipment input → select protective device In from device/load requirements → choose conductor so Ib ≤ In ≤ Iz after applicable correction factors → verify voltage drop → verify short-circuit thermal withstand and protective-device breaking capacity.</p>'+
+  '<p><b class="text-slate-200">Ampacity:</b> IEC 60364-5-52 Table C.52.1 simplified unburied reference dataset. Method, loaded conductor count, insulation and copper/aluminium must match the actual installation. Unsupported combinations are blocked, not guessed.</p>'+
+  '<p><b class="text-slate-200">Voltage drop:</b> ΔU = (2 for 1φ, √3 for balanced 3φ) × I × L × (R cosφ + X sinφ); R is adjusted from 20°C using copper α20=0.00393/K. X defaults to 0.08 Ω/km unless manufacturer data is supplied.</p>'+
+  '<p><b class="text-slate-200">Short-circuit withstand:</b> S ≥ I√t/k, with k=115 for Cu/PVC and 143 for Cu/XLPE; the selected table currently only enables PVC. Fault-current-at-cable must be entered at each circuit location. Breaking-capacity comparison is only at the entered common fault point.</p>'+
+  '<p class="text-amber-300">This is a design-assistance calculation, not a compliance certificate. Ambient/grouping factors are explicit engineer inputs until complete configuration-specific correction-factor tables are verified. ADS/loop impedance, protective-device time-current curves, selectivity, harmonics, motor starting and full IEC 60287 thermal calculations remain outside this v2 release.</p>';
 }
-
-if (typeof module !== 'undefined' && module.exports) module.exports = { calculateCableChecks };
+if(typeof module!=='undefined'&&module.exports)module.exports={calculateCableChecks};
