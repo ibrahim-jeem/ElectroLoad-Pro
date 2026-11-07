@@ -14,7 +14,7 @@
       if (!source || !host) return;
       const rows = Array.from(source.querySelectorAll('tr'));
       const groups = new Map();
-      (window.fixtures || []).forEach((fixture, index) => {
+      fixtures.forEach((fixture, index) => {
         const room = String(fixture.room || 'General').trim() || 'General';
         const key = fixture.board + '|' + room;
         if (!groups.has(key)) groups.set(key, { room: room, board: fixture.board, rows: [], watts: 0 });
