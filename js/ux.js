@@ -77,6 +77,20 @@
     const fixture = document.querySelector('#fixtureRoomGroups')?.closest('section');
     const advanced = $('advancedPanel');
     if (!hierarchy || !advanced || !fixture) return;
+    // Give the calculated branch schedule a stable hook so it lives with the other advanced schedules.
+    const calculatedHeading = Array.from(document.querySelectorAll('main h2')).find(h => h.textContent.includes('Auto-Calculated Breaker'));
+    if (calculatedHeading) calculatedHeading.closest('section').id = 'calculatedEngineeringSection';
+    // The phase monitor becomes a compact KPI companion rather than a standalone page section.
+    const phaseSection = Array.from(document.querySelectorAll('main > section')).find(s => s.querySelector('#phaseR_stats'));
+    const kpiSection = Array.from(document.querySelectorAll('main > section')).find(s => s.querySelector('#totalKwVal'));
+    if (phaseSection && kpiSection && !phaseSection.dataset.compacted) {
+      const strip = document.createElement('div');
+      strip.className = 'phase-monitor-strip col-span-2 md:col-span-4 lg:col-span-6';
+      strip.dataset.compacted = '1';
+      while (phaseSection.firstChild) strip.appendChild(phaseSection.firstChild);
+      phaseSection.replaceWith(strip);
+      kpiSection.insertBefore(strip, kpiSection.firstChild);
+    }
     if (!$('boardHierarchyTree')) {
       const treeHost = document.createElement('div');
       treeHost.id = 'boardHierarchyTree';
@@ -157,6 +171,7 @@
     const advancedSection = $('advancedEngineeringSection');
     if (checklist && advancedSection && checklist.parentElement !== advancedSection.parentElement) advancedSection.insertAdjacentElement('afterend', checklist);
     if (checklist) {
+      checklist.classList.remove('no-print');
       checklist.id = 'projectReviewSection';
       const title = checklist.querySelector('h2');
       if (title) title.innerHTML = '<i class="fa-solid fa-clipboard-check text-amber-400 mr-2"></i>Final Engineer Check';
