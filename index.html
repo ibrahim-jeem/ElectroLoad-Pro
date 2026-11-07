@@ -93,6 +93,7 @@
                         <option value="Commercial">Commercial</option>
                         <option value="Industrial">Industrial</option>
                     </select>
+                    <small id="projectTypeNote" class="block mt-1 text-[10px] leading-relaxed text-slate-500">Residential profile: apply the local residential wiring guideline only within its stated scope.</small>
                 </label>
                 <label class="text-slate-400">Project name<input id="projectName" class="workspace-input"
                         placeholder="e.g. Gulshan Residence"></label>
@@ -417,6 +418,7 @@
             <datalist id="roomList"></datalist>
             <datalist id="cktList"></datalist>
 
+            <div id="fixtureRoomGroups" class="fixture-room-groups space-y-3" aria-live="polite"></div>
             <!-- Load Items Table -->
             <div class="overflow-x-auto flex-1">
                 <table class="w-full text-left border-collapse text-xs">
@@ -843,6 +845,7 @@
     <script src="js/export.js"></script>
     <script src="js/app.js"></script>
     <script src="js/project-workspace.js"></script>
+    <script src="js/ux.js"></script>
 </body>
 
 </html>

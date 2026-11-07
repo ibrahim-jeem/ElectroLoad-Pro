@@ -105,7 +105,7 @@ test('automatic CKT references are unique across different boards', async ({ pag
 });
 
 test('loads beyond the supported breaker and cable tables are marked NOT SIZED', async ({ page }) => {
-  const row = page.locator('#fixtureTableBody tr').first();
+  const row = page.locator('#fixtureRoomGroups tbody tr').first();
   const watts = row.locator('input[type="number"]').nth(1);
   await watts.fill('100000000');
   await watts.press('Tab');
@@ -114,7 +114,7 @@ test('loads beyond the supported breaker and cable tables are marked NOT SIZED',
 });
 
 test('invalid power factor blocks calculations instead of silently calculating', async ({ page }) => {
-  const row = page.locator('#fixtureTableBody tr').first();
+  const row = page.locator('#fixtureRoomGroups tbody tr').first();
   const pf = row.locator('input[type="number"]').nth(2);
   await pf.fill('1.5');
   await pf.press('Tab');
@@ -212,11 +212,11 @@ test('project category and additional distribution board types are available and
 
 test('per-load current and demand factors are editable and affect calculated current and demand', async ({ page }) => {
   const base = await page.evaluate(() => itemCurrent(fixtures[0]));
-  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(3).fill('1.65');
-  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(3).press('Tab');
+  await page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="number"]').nth(3).fill('1.65');
+  await page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="number"]').nth(3).press('Tab');
   await expect.poll(() => page.evaluate(() => itemCurrent(fixtures[0]))).toBeCloseTo(base * 1.65, 2);
-  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(4).fill('0.5');
-  await page.locator('#fixtureTableBody tr').first().locator('input[type="number"]').nth(4).press('Tab');
+  await page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="number"]').nth(4).fill('0.5');
+  await page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="number"]').nth(4).press('Tab');
   await expect(page.locator('#demandKwVal')).not.toHaveText(await page.locator('#totalKwVal').innerText());
   const feederCurrent = await page.evaluate(() => { const c=circuits.find(c=>c.items.includes(fixtures[0])); return {connected:c.current,demand:c.demandCurrent}; });
   expect(feederCurrent.demand).toBeLessThan(feederCurrent.connected);
@@ -352,20 +352,16 @@ test('project JSON import restores a validated saved project snapshot', async ({
 });
 
 
-test('release layout keeps project basis compact and phase meters on one row', async ({ page }) => {
-  const basisWidth = await page.locator('#projectDesignBasis').evaluate(el => el.getBoundingClientRect().width);
-  expect(basisWidth).toBeLessThan(600);
-  const boxes = await Promise.all(['#phaseR_stats','#phaseY_stats','#phaseB_stats'].map(selector =>
-    page.locator(selector).evaluate(el => {
-      const card = el.parentElement.parentElement;
-      const rect = card.getBoundingClientRect();
-      return { x: rect.x, y: rect.y, right: rect.right };
-    })
-  ));
-  expect(boxes[0].y).toBeCloseTo(boxes[1].y, 0);
-  expect(boxes[1].y).toBeCloseTo(boxes[2].y, 0);
-  expect(boxes[0].x).toBeLessThan(boxes[1].x);
-  expect(boxes[1].x).toBeLessThan(boxes[2].x);
+test('Project Workspace remains intact and phase monitor is a compact KPI companion', async ({ page }) => {
+  await expect(page.locator('#projectManager')).toBeVisible();
+  for (const id of ['#projectName','#projectClient','#projectLocation','#projectDesigner','#projectDrawingNo','#projectRevision']) {
+    await expect(page.locator(id)).toBeVisible();
+  }
+  const monitor = page.locator('.phase-monitor-strip');
+  await expect(monitor).toBeVisible();
+  const isInsideKpi = await monitor.evaluate(el => !!el.closest('section')?.querySelector('#totalKwVal'));
+  expect(isInsideKpi).toBeTruthy();
+  for (const id of ['#phaseR_stats','#phaseY_stats','#phaseB_stats']) await expect(page.locator(id)).toBeVisible();
 });
 
 test('readiness checklist rejects an MDB breaker below the entered prospective fault level', async ({ page }) => {
@@ -393,4 +389,45 @@ test('advanced toggle contains circuit grouping and breaker margin controls', as
 
 test('breaker curve is not guessed from load category', async ({ page }) => {
   await expect(page.locator('#calculatedScheduleBody')).toContainText('ENGINEER REVIEW');
+});
+
+
+test('board hierarchy is visible above fixture schedule and supports drag-to-reparent', async ({ page }) => {
+  const tree = page.locator('#boardHierarchyTree');
+  await expect(tree.locator('[data-board-id="b0"]')).toHaveCount(1);
+  const order = await page.evaluate(() => {
+    const hierarchy = document.querySelector('#boardHierarchySection');
+    const fixtures = document.querySelector('#fixtureRoomGroups').closest('section');
+    return hierarchy.compareDocumentPosition(fixtures) & Node.DOCUMENT_POSITION_FOLLOWING;
+  });
+  expect(order).toBeTruthy();
+  await tree.locator('[data-board-id="b2"]').dragTo(tree.locator('[data-board-id="b1"]'));
+  await expect.poll(() => page.evaluate(() => boards.find(b => b.id === 'b2').par)).toBe('b1');
+  await expect(tree.locator('[data-board-id="b2"]')).toHaveAttribute('title', /Fed from: SDB-1/);
+});
+
+test('fixture schedule is grouped by room and edits refresh the room block', async ({ page }) => {
+  const groups = page.locator('#fixtureRoomGroups details');
+  await expect(groups.first()).toBeVisible();
+  const fixtureCount = await page.evaluate(() => fixtures.length);
+  await expect(page.locator('#fixtureRoomGroups tbody tr')).toHaveCount(fixtureCount);
+  const roomInput = page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="text"]').nth(1);
+  await roomInput.fill('QA Test Room');
+  await roomInput.press('Tab');
+  await expect(page.locator('#fixtureRoomGroups summary').filter({ hasText: 'QA Test Room' }).first()).toBeVisible();
+});
+
+test('engineering schedules are consolidated inside Advanced and review is final', async ({ page }) => {
+  const panel = page.locator('#advancedPanel');
+  await expect(page.locator('#calculatedEngineeringSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#dbScheduleSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#cableSizingSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#projectReviewSection')).toContainText('Final Engineer Check');
+  const reviewAfterAdvanced = await page.evaluate(() => {
+    const advanced = document.querySelector('#advancedEngineeringSection');
+    const review = document.querySelector('#projectReviewSection');
+    return !!(advanced.compareDocumentPosition(review) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(reviewAfterAdvanced).toBeTruthy();
+  await expect(panel).toBeVisible();
 });
