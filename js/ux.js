@@ -77,6 +77,14 @@
     const fixture = document.querySelector('#fixtureRoomGroups')?.closest('section');
     const advanced = $('advancedPanel');
     if (!hierarchy || !advanced || !fixture) return;
+    if (!$('boardHierarchyTree')) {
+      const treeHost = document.createElement('div');
+      treeHost.id = 'boardHierarchyTree';
+      treeHost.className = 'board-tree-wrap';
+      treeHost.setAttribute('aria-label', 'Distribution board feeding hierarchy');
+      const sectionTable = hierarchy.querySelector('.overflow-x-auto');
+      hierarchy.insertBefore(treeHost, sectionTable || null);
+    }
     // Keep the visual hierarchy in the main flow; keep its manual table in Advanced.
     if (hierarchy.parentElement === advanced) fixture.parentElement.insertBefore(hierarchy, fixture);
     const editor = $('boardTableBody')?.closest('.overflow-x-auto');
