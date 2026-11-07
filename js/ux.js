@@ -26,7 +26,7 @@
         host.innerHTML = '<div class="fixture-empty">No fixtures yet. Add an item or choose a preset to start a room schedule.</div>';
         return;
       }
-      Array.from(groups.values()).sort((a,b) => a.room.localeCompare(b.room)).forEach((group, index) => {
+      Array.from(groups.values()).forEach((group, index) => {
         const board = boards.find(b => b.id === group.board);
         const details = document.createElement('details');
         details.className = 'fixture-room-card';
