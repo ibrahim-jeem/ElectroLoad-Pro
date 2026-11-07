@@ -394,3 +394,44 @@ test('advanced toggle contains circuit grouping and breaker margin controls', as
 test('breaker curve is not guessed from load category', async ({ page }) => {
   await expect(page.locator('#calculatedScheduleBody')).toContainText('ENGINEER REVIEW');
 });
+
+
+test('board hierarchy is visible above fixture schedule and supports drag-to-reparent', async ({ page }) => {
+  const tree = page.locator('#boardHierarchyTree');
+  await expect(tree.locator('[data-board-id="b0"]')).toHaveCount(1);
+  const order = await page.evaluate(() => {
+    const hierarchy = document.querySelector('#boardHierarchySection');
+    const fixtures = document.querySelector('#fixtureRoomGroups').closest('section');
+    return hierarchy.compareDocumentPosition(fixtures) & Node.DOCUMENT_POSITION_FOLLOWING;
+  });
+  expect(order).toBeTruthy();
+  await tree.locator('[data-board-id="b2"]').dragTo(tree.locator('[data-board-id="b1"]'));
+  await expect.poll(() => page.evaluate(() => boards.find(b => b.id === 'b2').par)).toBe('b1');
+  await expect(tree.locator('[data-board-id="b2"]')).toHaveAttribute('title', /Fed from: SDB-1/);
+});
+
+test('fixture schedule is grouped by room and edits refresh the room block', async ({ page }) => {
+  const groups = page.locator('#fixtureRoomGroups details');
+  await expect(groups.first()).toBeVisible();
+  const fixtureCount = await page.evaluate(() => fixtures.length);
+  await expect(page.locator('#fixtureRoomGroups tbody tr')).toHaveCount(fixtureCount);
+  const roomInput = page.locator('#fixtureRoomGroups tbody tr').first().locator('input[type="text"]').nth(1);
+  await roomInput.fill('QA Test Room');
+  await roomInput.press('Tab');
+  await expect(page.locator('#fixtureRoomGroups summary')).toContainText('QA Test Room');
+});
+
+test('engineering schedules are consolidated inside Advanced and review is final', async ({ page }) => {
+  const panel = page.locator('#advancedPanel');
+  await expect(page.locator('#calculatedEngineeringSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#dbScheduleSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#cableSizingSection').locator('xpath=ancestor::*[@id="advancedPanel"]')).toHaveCount(1);
+  await expect(page.locator('#projectReviewSection')).toContainText('Final Engineer Check');
+  const reviewAfterAdvanced = await page.evaluate(() => {
+    const advanced = document.querySelector('#advancedEngineeringSection');
+    const review = document.querySelector('#projectReviewSection');
+    return !!(advanced.compareDocumentPosition(review) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(reviewAfterAdvanced).toBeTruthy();
+  await expect(panel).toBeVisible();
+});
