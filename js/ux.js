@@ -208,7 +208,8 @@
     drawTree();
     const toggle = $('advancedToggle');
     toggle?.addEventListener('change', () => {
-      if (!toggle.checked && $('boardAdvancedEditor')) $('boardAdvancedEditor').hidden = true;
+      const editor = $('boardAdvancedEditor');
+      if (editor) editor.hidden = !toggle.checked;
     });
     const originalRenderBoards = window.renderBoardTable;
     if (typeof originalRenderBoards === 'function' && !originalRenderBoards.__treeWrapped) {
