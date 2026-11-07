@@ -167,6 +167,16 @@
 
   function install() {
     enableRoomBlocks();
+    const originalUpdateFixture = window.updateFixture;
+    if (typeof originalUpdateFixture === 'function' && !originalUpdateFixture.__roomRefresh) {
+      const wrappedUpdate = function () {
+        const result = originalUpdateFixture.apply(this, arguments);
+        window.renderFixtureTable();
+        return result;
+      };
+      wrappedUpdate.__roomRefresh = true;
+      window.updateFixture = wrappedUpdate;
+    }
     const oldRecalc = window.recalculateAll;
     if (typeof oldRecalc === 'function' && !oldRecalc.__uxWrapped) {
       const wrapped = function () {
