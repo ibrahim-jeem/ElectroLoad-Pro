@@ -169,7 +169,7 @@
     });
     const checklist = $('projectReviewSection') || document.querySelector('section:has(#projectReadinessChecks)');
     const advancedSection = $('advancedEngineeringSection');
-    if (checklist && advancedSection && checklist.parentElement !== advancedSection.parentElement) advancedSection.insertAdjacentElement('afterend', checklist);
+    if (checklist && advancedSection) advancedSection.insertAdjacentElement('afterend', checklist);
     if (checklist) {
       checklist.classList.remove('no-print');
       checklist.id = 'projectReviewSection';
