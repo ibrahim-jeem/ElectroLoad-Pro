@@ -27,7 +27,7 @@
         return;
       }
       Array.from(groups.values()).sort((a,b) => a.room.localeCompare(b.room)).forEach((group, index) => {
-        const board = (window.boards || []).find(b => b.id === group.board);
+        const board = boards.find(b => b.id === group.board);
         const details = document.createElement('details');
         details.className = 'fixture-room-card';
         if (index === 0) details.open = true;
@@ -57,7 +57,7 @@
 
   function drawTree() {
     const host = $('boardHierarchyTree');
-    if (!host || !Array.isArray(window.boards) || !window.boards.length) return;
+    if (!host || !Array.isArray(boards) || !boards.length) return;
     const children = id => boards.filter(b => b.par === id);
     const node = (b, path) => {
       if (path.has(b.id)) return '';
